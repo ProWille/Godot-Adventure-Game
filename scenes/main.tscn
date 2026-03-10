@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://cn8edqjhbxsuc"]
+
+[ext_resource type="Script" uid="uid://cawkxwq67rs1v" path="res://scripts/TerrainController.cs" id="1_0wfyh"]
+[ext_resource type="Script" uid="uid://daah7p8fp84ig" path="res://scripts/CameraController.cs" id="2_sugp2"]
+
+[sub_resource type="Environment" id="Environment_ij1v8"]
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_bl13t"]
+
+[node name="Main" type="Node3D" unique_id=909135880]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1025938306]
+environment = SubResource("Environment_ij1v8")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=555491273]
+
+[node name="Terrain" type="MeshInstance3D" parent="." unique_id=2117551585]
+mesh = SubResource("ArrayMesh_bl13t")
+script = ExtResource("1_0wfyh")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1161663120]
+transform = Transform3D(1, 0, 0, 0, 0.9659258, 0.25881904, 0, -0.25881904, 0.9659258, 0, 92, 301)
+script = ExtResource("2_sugp2")
