@@ -3,22 +3,27 @@ using Godot;
 
 public partial class CameraController : Camera3D
 {
-    [Export(PropertyHint.Range, "0, 100, 1, prefer_slider")]
-    private int _speed = 10;
-    public int Speed
+    [Export(PropertyHint.Range, "0.1f, 10.0f, 0.1f, prefer_slider")]
+    private float _speed = 5.0f;
+    public float Speed
     {
         get => _speed;
-        private set
-        {
-            _speed = Math.Clamp(value, 0, 100);
-        }
+        private set => _speed = Math.Clamp(value, 0.1f, 10.0f);
+    }
+
+    [Export(PropertyHint.Range, "0.1f, 1.0f, 0.1f, prefer_slider")]
+    private float _sensitivity = 0.5f;
+    public float Sensitivity
+    {
+        get => _sensitivity;
+        private set => _sensitivity = Math.Clamp(value, 0.1f, 1.0f);
     }
 
     public override void _Input(InputEvent @event)
     {
         if (@event is InputEventMouseMotion mouseMotion)
         {
-            Turn(mouseMotion.Relative.X, mouseMotion.Relative.Y);
+            Turn(mouseMotion.Relative.X * _sensitivity, mouseMotion.Relative.Y * _sensitivity);
         }
 
         if (@event is InputEventMouseButton mouseButton && mouseButton.Pressed && !mouseButton.IsEcho())
@@ -26,10 +31,10 @@ public partial class CameraController : Camera3D
             switch (mouseButton.ButtonIndex)
             {
                 case MouseButton.WheelUp:
-                    Speed++;
+                    Speed += 0.1f;
                     return;
                 case MouseButton.WheelDown:
-                    Speed--;
+                    Speed -= 0.1f;
                     return;
                 default:
                     return;

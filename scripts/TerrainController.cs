@@ -1,6 +1,7 @@
 using System;
 using Godot;
 
+[Tool]
 public partial class TerrainController : MeshInstance3D
 {
     [Export] public int MapSize { get; private set; } = 256;
@@ -30,6 +31,7 @@ public partial class TerrainController : MeshInstance3D
 
     public override void _Ready()
     {
+        SetInstanceShaderParameter("height", _height * 2);
         UpdateMesh();
     }
 
