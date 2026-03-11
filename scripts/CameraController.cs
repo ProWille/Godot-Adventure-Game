@@ -23,10 +23,10 @@ public partial class CameraController : Camera3D
     {
         if (@event is InputEventMouseMotion mouseMotion)
         {
-            Turn(mouseMotion.Relative.X * _sensitivity, mouseMotion.Relative.Y * _sensitivity);
+            Turn(mouseMotion.Relative.X * Sensitivity, mouseMotion.Relative.Y * Sensitivity);
         }
 
-        if (@event is InputEventMouseButton mouseButton && mouseButton.Pressed && !mouseButton.IsEcho())
+        if (@event is InputEventMouseButton mouseButton && mouseButton.Pressed)
         {
             switch (mouseButton.ButtonIndex)
             {
@@ -53,7 +53,7 @@ public partial class CameraController : Camera3D
     public override void _Process(double delta)
     {
         var direction = GetDirection();
-        Position += direction * Speed;
+        Position += direction * _speed;
     }
 
     private Vector3 GetDirection()

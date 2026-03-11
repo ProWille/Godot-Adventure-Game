@@ -4,8 +4,11 @@ using Godot;
 [Tool]
 public partial class TerrainController : MeshInstance3D
 {
-    [Export] public int MapSize { get; private set; } = 256;
-    [Export] public FastNoiseLite Noise { get; private set; } = new();
+    [Export] private int _mapSize = 256;
+    public int MapSize => _mapSize;
+
+    [Export] private FastNoiseLite _noise = new();
+    public FastNoiseLite Noise => _noise;
 
     [Export(PropertyHint.Range, "4, 256, 4, prefer_slider")]
     private int _resolution = 32;
@@ -15,6 +18,7 @@ public partial class TerrainController : MeshInstance3D
         private set
         {
             _resolution = Math.Clamp(value, 4, 256);
+            UpdateMesh();
         }
     }
 
@@ -26,6 +30,8 @@ public partial class TerrainController : MeshInstance3D
         private set
         {
             _height = Math.Clamp(value, 4.0f, 256.0f);
+            SetInstanceShaderParameter("height", _height * 2);
+            UpdateMesh();
         }
     }
 
@@ -37,12 +43,12 @@ public partial class TerrainController : MeshInstance3D
 
     private float GetHeight(float x, float y)
     {
-        return Noise.GetNoise2D(x, y) * Height;
+        return _noise.GetNoise2D(x, y) * _height;
     }
 
     private Vector3 GetNormal(float x, float y)
     {
-        var epsilon = MapSize / Resolution;
+        var epsilon = _mapSize / _resolution;
         var normal = new Vector3(
             (GetHeight(x + epsilon, y) - GetHeight(x - epsilon, y)) / (2.0f * epsilon),
             1.0f,
@@ -56,9 +62,9 @@ public partial class TerrainController : MeshInstance3D
     {
         var plane = new PlaneMesh
         {
-            SubdivideDepth = Resolution,
-            SubdivideWidth = Resolution,
-            Size = new Vector2(MapSize, MapSize)
+            SubdivideDepth = _resolution,
+            SubdivideWidth = _resolution,
+            Size = new Vector2(_mapSize, _mapSize)
         };
 
         var planeArrays = plane.GetMeshArrays();
@@ -70,14 +76,9 @@ public partial class TerrainController : MeshInstance3D
         for (int i = 0; i < vertexArray.Length; i++)
         {
             var vertex = vertexArray[i];
-            var normal = Vector3.Up;
-            var tangent = Vector3.Right;
-            if (Noise != null)
-            {
-                vertex.Y = GetHeight(vertex.X, vertex.Z);
-                normal = GetNormal(vertex.X, vertex.Z);
-                tangent = normal.Cross(Vector3.Up);
-            }
+            vertex.Y = GetHeight(vertex.X, vertex.Z);
+            var normal = GetNormal(vertex.X, vertex.Z);
+            var tangent = normal.Cross(Vector3.Up);
 
             vertexArray[i] = vertex;
             normalArray[i] = normal;

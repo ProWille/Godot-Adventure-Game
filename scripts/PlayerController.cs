@@ -2,20 +2,26 @@ using Godot;
 
 public partial class PlayerController : CharacterBody3D
 {
-    [Export] public int Speed { get; set; } = 15;
-    [Export] public int FallAcceleration { get; set; } = 50;
-    [Export] public int JumpImpulse { get; set; } = 20;
+    [Export] private float _speed = 15.0f;
+    public float Speed => _speed;
 
-    private Vector3 _targetVelocity = Vector3.Zero;
+    [Export] private float _fallAcceleration = 50.0f;
+    public float FallAcceleration => _fallAcceleration;
 
-    private Camera3D _camera;
+    [Export] private float _jumpImpulse = 20.0f;
+    public float JumpImpulse => _jumpImpulse;
+
+    [Export] private Camera3D _camera;
 
     public override void _Ready()
     {
-        _camera = GetNode<Camera3D>("CameraPivot/Camera3D");
-        if (_camera == null)
+        if (!IsInstanceValid(_camera))
         {
-            GD.PrintErr(Name, ".", nameof(_Ready), " : ", "Camera3D node not found as a child of Player.");
+            _camera = GetNode<Camera3D>("CameraPivot/Camera3D");
+            if (_camera == null)
+            {
+                GD.PrintErr(Name, ".", nameof(_Ready), " : ", "Camera3D node not found as a child of Player.");
+            }
         }
     }
 
@@ -31,20 +37,21 @@ public partial class PlayerController : CharacterBody3D
     {
         Vector3 direction = GetDirection();
 
-        _targetVelocity.X = direction.X * Speed;
-        _targetVelocity.Z = direction.Z * Speed;
+        var newVelocity = Velocity;
+        newVelocity.X = direction.X * _speed;
+        newVelocity.Z = direction.Z * _speed;
 
         if (!IsOnFloor())
         {
-            _targetVelocity.Y -= FallAcceleration * (float)delta;
+            newVelocity.Y -= _fallAcceleration * (float)delta;
         }
 
         if (IsOnFloor() && Input.IsActionJustPressed("jump"))
         {
-            _targetVelocity.Y = JumpImpulse;
+            newVelocity.Y = _jumpImpulse;
         }
 
-        Velocity = _targetVelocity;
+        Velocity = newVelocity;
         MoveAndSlide();
     }
 
