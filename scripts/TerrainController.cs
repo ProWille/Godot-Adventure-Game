@@ -3,11 +3,29 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 
+public enum BiomeType
+{
+    Ocean,
+    Grassland,
+    Forest,
+    Jungle,
+    Desert,
+    Savanna,
+    Tundra,
+    Mountain
+}
+
 [Tool]
 public partial class TerrainController : Node3D
 {
-    [Export] private FastNoiseLite _noise = new();
-    public FastNoiseLite Noise => _noise;
+    [Export] private FastNoiseLite _moistureNoise = new();
+    public FastNoiseLite MoistureNoise => _moistureNoise;
+
+    [Export] private FastNoiseLite _temperatureNoise = new();
+    public FastNoiseLite TemperatureNoise => _temperatureNoise;
+
+    [Export] private FastNoiseLite _heightNoise = new();
+    public FastNoiseLite HeightNoise => _heightNoise;
 
     [Export(PropertyHint.Range, "4, 256, 4, prefer_slider")]
     private int _resolution = 32;
@@ -140,6 +158,7 @@ public partial class TerrainController : Node3D
         var vertexArray = planeArrays[(int)Mesh.ArrayType.Vertex].AsVector3Array();
         var normalArray = planeArrays[(int)Mesh.ArrayType.Normal].AsVector3Array();
         var tangentArray = planeArrays[(int)Mesh.ArrayType.Tangent].AsFloat32Array();
+        var colorArray = new Color[vertexArray.Length];
 
         var offsetX = coord.X * _chunkSize;
         var offsetZ = coord.Y * _chunkSize;
@@ -147,9 +166,21 @@ public partial class TerrainController : Node3D
         for (int i = 0; i < vertexArray.Length; i++)
         {
             var vertex = vertexArray[i];
-            vertex.Y = GetHeight(vertex.X + offsetX, vertex.Z + offsetZ);
-            var normal = GetNormal(vertex.X + offsetX, vertex.Z + offsetZ);
+            var x = vertex.X + offsetX;
+            var z = vertex.Z + offsetZ;
+            
+            var heightValue = GetHeight(x, z);
+            vertex.Y = heightValue;
+            
+            var normal = GetNormal(x, z);
             var tangent = normal.Cross(Vector3.Up);
+
+            var normalizedHeight = (heightValue / _height + 1.0f) / 2.0f;
+            var moisture = GetMoisture(x, z);
+            var temperature = GetTemperature(x, z);
+            var biome = GetBiome(moisture, temperature, normalizedHeight);
+            
+            colorArray[i] = GetBiomeColorWeights(biome);
 
             vertexArray[i] = vertex;
             normalArray[i] = normal;
@@ -161,6 +192,7 @@ public partial class TerrainController : Node3D
         planeArrays[(int)Mesh.ArrayType.Vertex] = vertexArray.AsSpan();
         planeArrays[(int)Mesh.ArrayType.Normal] = normalArray.AsSpan();
         planeArrays[(int)Mesh.ArrayType.Tangent] = tangentArray.AsSpan();
+        planeArrays[(int)Mesh.ArrayType.Color] = colorArray.AsSpan();
 
         var arrayMesh = new ArrayMesh();
         arrayMesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, planeArrays);
@@ -186,9 +218,57 @@ public partial class TerrainController : Node3D
         return GetChunkCoord(position.X, position.Z);
     }
 
+    private float GetMoisture(float x, float z)
+    {
+        return (_moistureNoise.GetNoise2D(x, z) + 1.0f) / 2.0f;
+    }
+
+    private float GetTemperature(float x, float z)
+    {
+        return (_temperatureNoise.GetNoise2D(x, z) + 1.0f) / 2.0f;
+    }
+
     private float GetHeight(float x, float z)
     {
-        return _noise.GetNoise2D(x, z) * _height;
+        return _heightNoise.GetNoise2D(x, z) * _height;
+    }
+
+    public BiomeType GetBiome(float moisture, float temperature, float height)
+    {
+        if (height < 0.3f)
+            return BiomeType.Ocean;
+
+        if (height > 0.7f)
+            return BiomeType.Mountain;
+
+        if (temperature < 0.2f)
+            return BiomeType.Tundra;
+
+        if (temperature > 0.7f)
+            return moisture < 0.3f ? BiomeType.Desert : BiomeType.Savanna;
+
+        return moisture switch
+        {
+            < 0.3f => BiomeType.Grassland,
+            < 0.6f => BiomeType.Forest,
+            _ => BiomeType.Jungle
+        };
+    }
+
+    private Color GetBiomeColorWeights(BiomeType biome)
+    {
+        return biome switch
+        {
+            BiomeType.Ocean => new Color(0.0f, 0.2f, 0.8f),
+            BiomeType.Desert => new Color(0.9f, 0.8f, 0.5f),
+            BiomeType.Savanna => new Color(0.8f, 0.7f, 0.4f),
+            BiomeType.Grassland => new Color(0.4f, 0.8f, 0.2f),
+            BiomeType.Forest => new Color(0.2f, 0.6f, 0.1f),
+            BiomeType.Jungle => new Color(0.1f, 0.5f, 0.1f),
+            BiomeType.Tundra => new Color(0.8f, 0.9f, 1.0f),
+            BiomeType.Mountain => new Color(0.7f, 0.7f, 0.8f),
+            _ => new Color(0.5f, 0.5f, 0.5f)
+        };
     }
 
     private Vector3 GetNormal(float x, float z)

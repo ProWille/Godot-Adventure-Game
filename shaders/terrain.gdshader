@@ -1,13 +1,52 @@
 shader_type spatial;
 
-uniform float height = 64.0;
-uniform sampler2D color_gradient;
-uniform sampler2D normal_map;
+uniform sampler2D sand_texture : source_color;
+uniform sampler2D grass_texture : source_color;
+uniform sampler2D forest_texture : source_color;
+uniform sampler2D rock_texture : source_color;
+uniform sampler2D snow_texture : source_color;
+uniform sampler2D water_texture : source_color;
+
+uniform float texture_scale = 10.0;
+uniform bool use_textures = false;
+
+varying vec3 vertex_color;
+
+void vertex() {
+	vertex_color = COLOR.rgb;
+}
 
 void fragment() {
-	vec4 world_vertex = INV_VIEW_MATRIX * vec4(VERTEX, 1.0);
-    vec3 model_vertex = (inverse(MODEL_MATRIX) * world_vertex).xyz;
-    float gradient_uv = (model_vertex.y / height) + 0.5;
-    ALBEDO = texture(color_gradient, vec2(gradient_uv)).rgb;
-    NORMAL_MAP = texture(normal_map, UV).xyz;
+	vec2 uv_scaled = UV * texture_scale;
+	
+	vec3 biome_color = vertex_color;
+	
+	vec3 color;
+	float max_comp = max(biome_color.r, max(biome_color.g, biome_color.b));
+	vec3 normalized = max_comp > 0.0 ? biome_color / max_comp : vec3(0.0);
+	
+	vec3 sand = use_textures ? texture(sand_texture, uv_scaled).rgb : vec3(0.9, 0.76, 0.5);
+	vec3 grass = use_textures ? texture(grass_texture, uv_scaled).rgb : vec3(0.4, 0.7, 0.2);
+	vec3 forest = use_textures ? texture(forest_texture, uv_scaled).rgb : vec3(0.15, 0.45, 0.1);
+	vec3 rock = use_textures ? texture(rock_texture, uv_scaled).rgb : vec3(0.5, 0.5, 0.55);
+	vec3 snow = use_textures ? texture(snow_texture, uv_scaled).rgb : vec3(0.9, 0.92, 0.95);
+	vec3 water = use_textures ? texture(water_texture, uv_scaled).rgb : vec3(0.1, 0.4, 0.7);
+	
+	if (normalized.b > 0.7 && normalized.r < 0.4 && normalized.g < 0.4) {
+		color = water;
+	} else if (normalized.r > 0.8 && normalized.g < 0.4) {
+		color = sand;
+	} else if (normalized.b > 0.6 && normalized.g > 0.3) {
+		color = forest;
+	} else if (normalized.g > 0.6 && normalized.b < 0.4) {
+		color = grass;
+	} else if (normalized.r > 0.5 && normalized.b > 0.5) {
+		color = snow;
+	} else if (normalized.r > 0.5 && normalized.g > 0.5) {
+		color = rock;
+	} else {
+		color = biome_color;
+	}
+	
+	ALBEDO = color;
 }

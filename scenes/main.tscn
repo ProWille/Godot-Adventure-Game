@@ -6,30 +6,18 @@
 
 [sub_resource type="Environment" id="Environment_ij1v8"]
 
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_jyhfs"]
+
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_tbgi4"]
 
-[sub_resource type="Gradient" id="Gradient_sugp2"]
-offsets = PackedFloat32Array(0.31380752, 0.49790794, 0.9958159, 1)
-colors = PackedColorArray(0, 0.32826394, 0.64994836, 1, 0, 0.5058824, 0.33333334, 1, 0.78505313, 0.6440157, 0.27273074, 1, 1, 1, 1, 1)
-
-[sub_resource type="GradientTexture1D" id="GradientTexture1D_jyhfs"]
-gradient = SubResource("Gradient_sugp2")
-width = 512
-
-[sub_resource type="FastNoiseLite" id="FastNoiseLite_sugp2"]
-
-[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_sugp2"]
-width = 1024
-height = 1024
-noise = SubResource("FastNoiseLite_sugp2")
-as_normal_map = true
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_tefeu"]
+frequency = 0.0029
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_0wfyh"]
 render_priority = 0
 shader = ExtResource("1_sugp2")
-shader_parameter/height = 128.0
-shader_parameter/color_gradient = SubResource("GradientTexture1D_jyhfs")
-shader_parameter/normal_map = SubResource("NoiseTexture2D_sugp2")
+shader_parameter/texture_scale = 10.0
+shader_parameter/use_textures = false
 
 [node name="Main" type="Node3D" unique_id=909135880]
 
@@ -46,9 +34,11 @@ _sensitivity = 0.25
 
 [node name="Node3D" type="Node3D" parent="." unique_id=1824529683 node_paths=PackedStringArray("_chunkTemplate")]
 script = ExtResource("2_jyhfs")
-_noise = SubResource("FastNoiseLite_tbgi4")
+_moistureNoise = SubResource("FastNoiseLite_jyhfs")
+_temperatureNoise = SubResource("FastNoiseLite_tbgi4")
+_heightNoise = SubResource("FastNoiseLite_tefeu")
 _height = 32.0
-_renderDistance = 6
+_renderDistance = 8
 _chunkTemplate = NodePath("../Template")
 
 [node name="Template" type="MeshInstance3D" parent="." unique_id=2117551585]
