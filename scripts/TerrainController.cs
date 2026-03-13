@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Godot;
 
 public enum BiomeType
@@ -51,7 +53,7 @@ public partial class TerrainController : Node3D
         }
     }
 
-    [Export(PropertyHint.Range, "1, 10, 1, prefer_slider")]
+    [Export(PropertyHint.Range, "1, 24, 1, prefer_slider")]
     private int _renderDistance = 4;
     public int RenderDistance => _renderDistance;
 
@@ -62,6 +64,7 @@ public partial class TerrainController : Node3D
     public MeshInstance3D ChunkTemplate => _chunkTemplate;
 
     private readonly Dictionary<Vector2I, MeshInstance3D> _chunks = [];
+    private readonly object _chunkLock = new();
     private Node3D _chunkContainer;
     private Vector2I _currentChunkCoord;
 
@@ -109,7 +112,7 @@ public partial class TerrainController : Node3D
 
                 if (!_chunks.ContainsKey(coord))
                 {
-                    CreateChunk(coord);
+                    QueueChunkGeneration(coord);
                 }
             }
         }
@@ -120,7 +123,7 @@ public partial class TerrainController : Node3D
         }
     }
 
-    private void CreateChunk(Vector2I coord)
+    private void QueueChunkGeneration(Vector2I coord)
     {
         var chunkMesh = IsInstanceValid(_chunkTemplate)
             ? _chunkTemplate.Duplicate() as MeshInstance3D
@@ -130,9 +133,80 @@ public partial class TerrainController : Node3D
         chunkMesh.Position = new Vector3(coord.X * _chunkSize, 0, coord.Y * _chunkSize);
         chunkMesh.Visible = true;
 
-        GenerateChunkMesh(chunkMesh, coord);
         _chunkContainer.AddChild(chunkMesh);
         _chunks[coord] = chunkMesh;
+
+        var capturedCoord = coord;
+        var thread = new Thread(() =>
+        {
+            var mesh = GenerateChunkMeshData(capturedCoord);
+            CallDeferred(nameof(AssignChunkMesh), capturedCoord, mesh);
+        });
+        thread.Start();
+    }
+
+    private void AssignChunkMesh(Vector2I coord, ArrayMesh mesh)
+    {
+        if (_chunks.TryGetValue(coord, out var chunk))
+        {
+            chunk.Mesh = mesh;
+        }
+    }
+
+    private ArrayMesh GenerateChunkMeshData(Vector2I coord)
+    {
+        var plane = new PlaneMesh
+        {
+            SubdivideDepth = _resolution,
+            SubdivideWidth = _resolution,
+            Size = new Vector2(_chunkSize, _chunkSize)
+        };
+
+        var planeArrays = plane.GetMeshArrays();
+
+        var vertexArray = planeArrays[(int)Mesh.ArrayType.Vertex].AsVector3Array();
+        var normalArray = planeArrays[(int)Mesh.ArrayType.Normal].AsVector3Array();
+        var tangentArray = planeArrays[(int)Mesh.ArrayType.Tangent].AsFloat32Array();
+        var colorArray = new Color[vertexArray.Length];
+
+        var offsetX = coord.X * _chunkSize;
+        var offsetZ = coord.Y * _chunkSize;
+
+        for (int i = 0; i < vertexArray.Length; i++)
+        {
+            var vertex = vertexArray[i];
+            var x = vertex.X + offsetX;
+            var z = vertex.Z + offsetZ;
+
+            var heightValue = GetHeight(x, z);
+            vertex.Y = heightValue;
+
+            var normal = GetNormal(x, z);
+            var tangent = normal.Cross(Vector3.Up);
+
+            var normalizedHeight = (heightValue / _height + 1.0f) / 2.0f;
+            var moisture = GetMoisture(x, z);
+            var temperature = GetTemperature(x, z);
+            var biome = GetBiome(moisture, temperature, normalizedHeight);
+
+            colorArray[i] = GetBiomeColorWeights(biome);
+
+            vertexArray[i] = vertex;
+            normalArray[i] = normal;
+            tangentArray[4 * i] = tangent.X;
+            tangentArray[4 * i + 1] = tangent.Y;
+            tangentArray[4 * i + 2] = tangent.Z;
+        }
+
+        planeArrays[(int)Mesh.ArrayType.Vertex] = vertexArray.AsSpan();
+        planeArrays[(int)Mesh.ArrayType.Normal] = normalArray.AsSpan();
+        planeArrays[(int)Mesh.ArrayType.Tangent] = tangentArray.AsSpan();
+        planeArrays[(int)Mesh.ArrayType.Color] = colorArray.AsSpan();
+
+        var arrayMesh = new ArrayMesh();
+        arrayMesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, planeArrays);
+
+        return arrayMesh;
     }
 
     private void RemoveChunk(Vector2I coord)
@@ -201,10 +275,41 @@ public partial class TerrainController : Node3D
 
     private void RegenerateAllChunks()
     {
-        foreach (var chunk in _chunks.Values)
+        List<(Vector2I coord, MeshInstance3D mesh)> chunksToUpdate;
+        lock (_chunkLock)
         {
-            var coord = GetChunkCoord(chunk.Position.X, chunk.Position.Z);
-            GenerateChunkMesh(chunk, coord);
+            chunksToUpdate = _chunks.Select(kv => (kv.Key, kv.Value)).ToList();
+        }
+
+        var threads = new List<Thread>();
+        var pendingMeshes = new ConcurrentDictionary<Vector2I, ArrayMesh>();
+
+        foreach (var (coord, chunk) in chunksToUpdate)
+        {
+            var capturedCoord = coord;
+            var thread = new Thread(() =>
+            {
+                var mesh = GenerateChunkMeshData(capturedCoord);
+                pendingMeshes[capturedCoord] = mesh;
+            });
+            threads.Add(thread);
+            thread.Start();
+        }
+
+        foreach (var thread in threads)
+        {
+            thread.Join();
+        }
+
+        lock (_chunkLock)
+        {
+            foreach (var kvp in pendingMeshes)
+            {
+                if (_chunks.TryGetValue(kvp.Key, out var chunk))
+                {
+                    chunk.Mesh = kvp.Value;
+                }
+            }
         }
     }
 

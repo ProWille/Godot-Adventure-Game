@@ -38,7 +38,7 @@ _moistureNoise = SubResource("FastNoiseLite_jyhfs")
 _temperatureNoise = SubResource("FastNoiseLite_tbgi4")
 _heightNoise = SubResource("FastNoiseLite_tefeu")
 _height = 32.0
-_renderDistance = 8
+_renderDistance = 24
 _chunkTemplate = NodePath("../Template")
 
 [node name="Template" type="MeshInstance3D" parent="." unique_id=2117551585]
