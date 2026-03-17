@@ -7,26 +7,14 @@ internal class GrassPlacer
     private MeshInstance3D _template;
     public MeshInstance3D Template => _template;
 
-    [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
-    private int _grasslandDensity = 100;
-
-    [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
-    private int _forestDensity = 80;
-
-    [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
-    private int _jungleDensity = 120;
-
-    [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
-    private int _savannaDensity = 60;
-
-    [Export(PropertyHint.Range, "0.1f, 2.0f, 0.1f, prefer_slider")]
-    private readonly float _minHeight = 0.5f;
-
-    [Export(PropertyHint.Range, "0.1f, 2.0f, 0.1f, prefer_slider")]
-    private readonly float _maxHeight = 1.5f;
-
-    [Export] private float _heightThreshold = 0.3f;
-    public float HeightThreshold => _heightThreshold;
+    private int _grasslandDensity;
+    private int _forestDensity;
+    private int _jungleDensity;
+    private int _savannaDensity;
+    private readonly float _minHeight;
+    private readonly float _maxHeight;
+    private readonly float _heightThreshold;
+    private readonly int _renderDistance;
 
     private readonly FastNoiseLite _placementNoise;
     private readonly Dictionary<Vector2I, MultiMeshInstance3D> _instances = [];
@@ -34,10 +22,28 @@ internal class GrassPlacer
     private readonly Node3D _parent;
     private readonly object _lock = new();
 
-    public GrassPlacer(TerrainController terrain, Node3D parent)
+    public GrassPlacer(
+        TerrainController terrain,
+        Node3D parent,
+        int grasslandDensity,
+        int forestDensity,
+        int jungleDensity,
+        int savannaDensity,
+        float minHeight,
+        float maxHeight,
+        float heightThreshold,
+        int renderDistance)
     {
         _terrain = terrain;
         _parent = parent;
+        _grasslandDensity = Math.Clamp(grasslandDensity, 0, 500);
+        _forestDensity = Math.Clamp(forestDensity, 0, 500);
+        _jungleDensity = Math.Clamp(jungleDensity, 0, 500);
+        _savannaDensity = Math.Clamp(savannaDensity, 0, 500);
+        _minHeight = minHeight;
+        _maxHeight = maxHeight;
+        _heightThreshold = heightThreshold;
+        _renderDistance = renderDistance;
         _placementNoise = new FastNoiseLite
         {
             Seed = new Random().Next() * 1000,
@@ -77,6 +83,11 @@ internal class GrassPlacer
     public void GenerateForChunk(Vector2I coord)
     {
         if (_template == null)
+            return;
+
+        var playerChunk = _terrain.CurrentChunkCoord;
+        if (Math.Abs(coord.X - playerChunk.X) > _renderDistance || 
+            Math.Abs(coord.Y - playerChunk.Y) > _renderDistance)
             return;
 
         var chunkPos = new Vector3(coord.X * _terrain.ChunkSize, 0, coord.Y * _terrain.ChunkSize);

@@ -7,23 +7,13 @@ internal class TreePlacer
     private MeshInstance3D _template;
     public MeshInstance3D Template => _template;
 
-    [Export(PropertyHint.Range, "0, 50, 1, prefer_slider")]
-    private int _forestDensity = 10;
-
-    [Export(PropertyHint.Range, "0, 50, 1, prefer_slider")]
-    private int _jungleDensity = 20;
-
-    [Export(PropertyHint.Range, "0.0f, 1.0f, 0.05f, prefer_slider")]
-    private readonly float _minHeightThreshold = 0.35f;
-
-    [Export(PropertyHint.Range, "0.0f, 1.0f, 0.05f, prefer_slider")]
-    private readonly float _maxHeightThreshold = 0.65f;
-
-    [Export(PropertyHint.Range, "0.5f, 3.0f, 0.1f, prefer_slider")]
-    private readonly float _minScale = 0.8f;
-
-    [Export(PropertyHint.Range, "0.5f, 3.0f, 0.1f, prefer_slider")]
-    private readonly float _maxScale = 1.5f;
+    private int _forestDensity;
+    private int _jungleDensity;
+    private readonly float _minHeightThreshold;
+    private readonly float _maxHeightThreshold;
+    private readonly float _minScale;
+    private readonly float _maxScale;
+    private readonly int _renderDistance;
 
     private readonly FastNoiseLite _placementNoise;
     private readonly Dictionary<Vector2I, MultiMeshInstance3D> _instances = [];
@@ -31,10 +21,26 @@ internal class TreePlacer
     private readonly Node3D _parent;
     private readonly object _lock = new();
 
-    public TreePlacer(TerrainController terrain, Node3D parent)
+    public TreePlacer(
+        TerrainController terrain,
+        Node3D parent,
+        int forestDensity,
+        int jungleDensity,
+        float minHeightThreshold,
+        float maxHeightThreshold,
+        float minScale,
+        float maxScale,
+        int renderDistance)
     {
         _terrain = terrain;
         _parent = parent;
+        _forestDensity = Math.Clamp(forestDensity, 0, 50);
+        _jungleDensity = Math.Clamp(jungleDensity, 0, 50);
+        _minHeightThreshold = minHeightThreshold;
+        _maxHeightThreshold = maxHeightThreshold;
+        _minScale = minScale;
+        _maxScale = maxScale;
+        _renderDistance = renderDistance;
         _placementNoise = new FastNoiseLite
         {
             Seed = new Random().Next() * 1000,
@@ -62,6 +68,11 @@ internal class TreePlacer
     public void GenerateForChunk(Vector2I coord)
     {
         if (_template == null)
+            return;
+
+        var playerChunk = _terrain.CurrentChunkCoord;
+        if (Math.Abs(coord.X - playerChunk.X) > _renderDistance || 
+            Math.Abs(coord.Y - playerChunk.Y) > _renderDistance)
             return;
 
         var chunkSize = _terrain.ChunkSize;

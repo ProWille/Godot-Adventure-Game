@@ -22,12 +22,14 @@ public partial class TerrainController : Node3D
 {
     [Export] private FastNoiseLite _moistureNoise = new();
     public FastNoiseLite MoistureNoise => _moistureNoise;
-
     [Export] private FastNoiseLite _temperatureNoise = new();
     public FastNoiseLite TemperatureNoise => _temperatureNoise;
-
     [Export] private FastNoiseLite _heightNoise = new();
     public FastNoiseLite HeightNoise => _heightNoise;
+
+    [Export] private MeshInstance3D _chunkTemplate;
+    [Export] private int _chunkSize = 64;
+    public int ChunkSize => _chunkSize;
 
     [Export(PropertyHint.Range, "4, 256, 4, prefer_slider")]
     private int _resolution = 32;
@@ -57,14 +59,39 @@ public partial class TerrainController : Node3D
     private int _renderDistance = 4;
     public int RenderDistance => _renderDistance;
 
-    [Export] private int _chunkSize = 64;
-    public int ChunkSize => _chunkSize;
+    public Vector2I CurrentChunkCoord => _currentChunkCoord;
 
-    [Export] private MeshInstance3D _chunkTemplate;
-    public MeshInstance3D ChunkTemplate => _chunkTemplate;
-
+    [ExportGroup("Grass")]
     [Export] private MeshInstance3D _grassTemplate;
+    [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
+    private int _grasslandDensity = 100;
+    [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
+    private int _grassForestDensity = 80;
+    [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
+    private int _grassJungleDensity = 120;
+    [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
+    private int _grassSavannaDensity = 60;
+    [Export(PropertyHint.Range, "0.1f, 2.0f, 0.1f, prefer_slider")]
+    private float _minGrassHeight = 0.5f;
+    [Export(PropertyHint.Range, "0.1f, 2.0f, 0.1f, prefer_slider")]
+    private float _maxGrassHeight = 1.5f;
+    [Export(PropertyHint.Range, "0.0f, 1.0f, 0.05f, prefer_slider")]
+    private float _grassHeightThreshold = 0.3f;
+
+    [ExportGroup("Trees")]
     [Export] private MeshInstance3D _treeTemplate;
+    [Export(PropertyHint.Range, "0, 50, 1, prefer_slider")]
+    private int _treeForestDensity = 10;
+    [Export(PropertyHint.Range, "0, 50, 1, prefer_slider")]
+    private int _treeJungleDensity = 20;
+    [Export(PropertyHint.Range, "0.0f, 1.0f, 0.05f, prefer_slider")]
+    private float _treeMinHeightThreshold = 0.35f;
+    [Export(PropertyHint.Range, "0.0f, 1.0f, 0.05f, prefer_slider")]
+    private float _treeMaxHeightThreshold = 0.65f;
+    [Export(PropertyHint.Range, "0.5f, 3.0f, 0.1f, prefer_slider")]
+    private float _treeMinScale = 0.8f;
+    [Export(PropertyHint.Range, "0.5f, 3.0f, 0.1f, prefer_slider")]
+    private float _treeMaxScale = 1.5f;
 
     private readonly Dictionary<Vector2I, MeshInstance3D> _chunks = [];
     private readonly object _chunkLock = new();
@@ -78,10 +105,29 @@ public partial class TerrainController : Node3D
         _chunkContainer = new Node3D { Name = "ChunkContainer" };
         AddChild(_chunkContainer);
 
-        _grassPlacer = new GrassPlacer(this, this);
+        _grassPlacer = new GrassPlacer(
+            this,
+            this,
+            _grasslandDensity,
+            _grassForestDensity,
+            _grassJungleDensity,
+            _grassSavannaDensity,
+            _minGrassHeight,
+            _maxGrassHeight,
+            _grassHeightThreshold,
+            _renderDistance);
         _grassPlacer.SetTemplate(_grassTemplate);
 
-        _treePlacer = new TreePlacer(this, this);
+        _treePlacer = new TreePlacer(
+            this,
+            this,
+            _treeForestDensity,
+            _treeJungleDensity,
+            _treeMinHeightThreshold,
+            _treeMaxHeightThreshold,
+            _treeMinScale,
+            _treeMaxScale,
+            _renderDistance);
         _treePlacer.SetTemplate(_treeTemplate);
 
         if (!Engine.IsEditorHint())
@@ -121,14 +167,26 @@ public partial class TerrainController : Node3D
                 var coord = new Vector2I(_currentChunkCoord.X + x, _currentChunkCoord.Y + z);
                 neededChunks.Add(coord);
 
-                if (!_chunks.ContainsKey(coord))
+                bool shouldCreate;
+                lock (_chunkLock)
+                {
+                    shouldCreate = !_chunks.ContainsKey(coord);
+                }
+
+                if (shouldCreate)
                 {
                     QueueChunkGeneration(coord);
                 }
             }
         }
 
-        foreach (var coord in _chunks.Keys.Except(neededChunks))
+        List<Vector2I> chunksToRemove;
+        lock (_chunkLock)
+        {
+            chunksToRemove = [.. _chunks.Keys.Except(neededChunks)];
+        }
+
+        foreach (var coord in chunksToRemove)
         {
             RemoveChunk(coord);
         }

@@ -19,7 +19,12 @@ shader = ExtResource("1_sugp2")
 shader_parameter/texture_scale = 10.0
 shader_parameter/use_textures = false
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sugp2"]
+albedo_color = Color(1, 0, 1, 1)
+
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_sugp2"]
+material = SubResource("StandardMaterial3D_sugp2")
+height = 5.0
 
 [node name="Main" type="Node3D" unique_id=909135880]
 
@@ -39,9 +44,9 @@ script = ExtResource("2_jyhfs")
 _moistureNoise = SubResource("FastNoiseLite_jyhfs")
 _temperatureNoise = SubResource("FastNoiseLite_tbgi4")
 _heightNoise = SubResource("FastNoiseLite_tefeu")
-_height = 32.0
-_renderDistance = 24
 _chunkTemplate = NodePath("../TerrainTemplate")
+_height = 32.0
+_renderDistance = 8
 _treeTemplate = NodePath("../TreeTemplate")
 
 [node name="TerrainTemplate" type="MeshInstance3D" parent="." unique_id=2117551585]
