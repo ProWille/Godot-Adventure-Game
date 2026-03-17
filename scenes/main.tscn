@@ -19,6 +19,8 @@ shader = ExtResource("1_sugp2")
 shader_parameter/texture_scale = 10.0
 shader_parameter/use_textures = false
 
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_sugp2"]
+
 [node name="Main" type="Node3D" unique_id=909135880]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1025938306]
@@ -32,14 +34,18 @@ script = ExtResource("2_sugp2")
 _speed = 1.0
 _sensitivity = 0.25
 
-[node name="Node3D" type="Node3D" parent="." unique_id=1824529683 node_paths=PackedStringArray("_chunkTemplate")]
+[node name="TerrainController" type="Node3D" parent="." unique_id=1824529683 node_paths=PackedStringArray("_chunkTemplate", "_treeTemplate")]
 script = ExtResource("2_jyhfs")
 _moistureNoise = SubResource("FastNoiseLite_jyhfs")
 _temperatureNoise = SubResource("FastNoiseLite_tbgi4")
 _heightNoise = SubResource("FastNoiseLite_tefeu")
 _height = 32.0
 _renderDistance = 24
-_chunkTemplate = NodePath("../Template")
+_chunkTemplate = NodePath("../TerrainTemplate")
+_treeTemplate = NodePath("../TreeTemplate")
 
-[node name="Template" type="MeshInstance3D" parent="." unique_id=2117551585]
+[node name="TerrainTemplate" type="MeshInstance3D" parent="." unique_id=2117551585]
 material_override = SubResource("ShaderMaterial_0wfyh")
+
+[node name="TreeTemplate" type="MeshInstance3D" parent="." unique_id=1131737983]
+mesh = SubResource("CapsuleMesh_sugp2")

@@ -63,15 +63,26 @@ public partial class TerrainController : Node3D
     [Export] private MeshInstance3D _chunkTemplate;
     public MeshInstance3D ChunkTemplate => _chunkTemplate;
 
+    [Export] private MeshInstance3D _grassTemplate;
+    [Export] private MeshInstance3D _treeTemplate;
+
     private readonly Dictionary<Vector2I, MeshInstance3D> _chunks = [];
     private readonly object _chunkLock = new();
     private Node3D _chunkContainer;
     private Vector2I _currentChunkCoord;
+    private GrassPlacer _grassPlacer;
+    private TreePlacer _treePlacer;
 
     public override void _Ready()
     {
         _chunkContainer = new Node3D { Name = "ChunkContainer" };
         AddChild(_chunkContainer);
+
+        _grassPlacer = new GrassPlacer(this, this);
+        _grassPlacer.SetTemplate(_grassTemplate);
+
+        _treePlacer = new TreePlacer(this, this);
+        _treePlacer.SetTemplate(_treeTemplate);
 
         if (!Engine.IsEditorHint())
         {
@@ -151,6 +162,9 @@ public partial class TerrainController : Node3D
         {
             chunk.Mesh = mesh;
         }
+
+        _grassPlacer?.GenerateForChunk(coord);
+        _treePlacer?.GenerateForChunk(coord);
     }
 
     private ArrayMesh GenerateChunkMeshData(Vector2I coord)
@@ -216,6 +230,9 @@ public partial class TerrainController : Node3D
             chunk.QueueFree();
             _chunks.Remove(coord);
         }
+
+        _grassPlacer?.RemoveForChunk(coord);
+        _treePlacer?.RemoveForChunk(coord);
     }
 
     private void GenerateChunkMesh(MeshInstance3D chunkMesh, Vector2I coord)
@@ -309,6 +326,24 @@ public partial class TerrainController : Node3D
                 {
                     chunk.Mesh = kvp.Value;
                 }
+            }
+        }
+
+        if (_grassPlacer != null)
+        {
+            _grassPlacer.ClearAll();
+            foreach (var coord in _chunks.Keys)
+            {
+                _grassPlacer.GenerateForChunk(coord);
+            }
+        }
+
+        if (_treePlacer != null)
+        {
+            _treePlacer.ClearAll();
+            foreach (var coord in _chunks.Keys)
+            {
+                _treePlacer.GenerateForChunk(coord);
             }
         }
     }
