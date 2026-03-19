@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://byfa1tjtd5hfw"]
+
+[ext_resource type="Script" uid="uid://daah7p8fp84ig" path="res://scripts/CameraController.cs" id="1_cvpoc"]
+
+[node name="Player" type="Camera3D" unique_id=922425726]
+transform = Transform3D(1, 0, 0, 0, 0.9659258, 0.25881904, 0, -0.25881904, 0.9659258, 0, 0, 0)
+script = ExtResource("1_cvpoc")
+_speed = 1.0
+_sensitivity = 0.25

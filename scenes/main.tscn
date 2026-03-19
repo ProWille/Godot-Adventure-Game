@@ -2,7 +2,9 @@
 
 [ext_resource type="Shader" uid="uid://fvgd8s2ryqg8" path="res://shaders/terrain.gdshader" id="1_sugp2"]
 [ext_resource type="Script" uid="uid://cawkxwq67rs1v" path="res://scripts/TerrainController.cs" id="2_jyhfs"]
-[ext_resource type="Script" uid="uid://daah7p8fp84ig" path="res://scripts/CameraController.cs" id="2_sugp2"]
+[ext_resource type="Material" uid="uid://el5y10hnh13g" path="res://addons/terrain_3d/extras/particle_example/process_material.tres" id="3_jyhfs"]
+[ext_resource type="PackedScene" uid="uid://dus5mvg748wnc" path="res://scenes/player.tscn" id="3_sugp2"]
+[ext_resource type="Material" uid="uid://ljo1wt61kbkq" path="res://addons/terrain_3d/extras/particle_example/grass_material.tres" id="4_tbgi4"]
 
 [sub_resource type="Environment" id="Environment_ij1v8"]
 
@@ -13,11 +15,14 @@
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_tefeu"]
 frequency = 0.0029
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_0wfyh"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_tbgi4"]
 render_priority = 0
 shader = ExtResource("1_sugp2")
 shader_parameter/texture_scale = 10.0
 shader_parameter/use_textures = false
+
+[sub_resource type="RibbonTrailMesh" id="RibbonTrailMesh_jyhfs"]
+material = ExtResource("4_tbgi4")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sugp2"]
 albedo_color = Color(1, 0, 1, 1)
@@ -33,24 +38,26 @@ environment = SubResource("Environment_ij1v8")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=555491273]
 
-[node name="Player" type="Camera3D" parent="." unique_id=1161663120]
-transform = Transform3D(1, 0, 0, 0, 0.9659258, 0.25881904, 0, -0.25881904, 0.9659258, 0, 92, 301)
-script = ExtResource("2_sugp2")
-_speed = 1.0
-_sensitivity = 0.25
-
-[node name="TerrainController" type="Node3D" parent="." unique_id=1824529683 node_paths=PackedStringArray("_chunkTemplate", "_treeTemplate")]
+[node name="TerrainController" type="Node3D" parent="." unique_id=1824529683 node_paths=PackedStringArray("_chunkTemplate", "_grassTemplate", "_treeTemplate")]
 script = ExtResource("2_jyhfs")
 _moistureNoise = SubResource("FastNoiseLite_jyhfs")
 _temperatureNoise = SubResource("FastNoiseLite_tbgi4")
 _heightNoise = SubResource("FastNoiseLite_tefeu")
 _chunkTemplate = NodePath("../TerrainTemplate")
 _height = 32.0
-_renderDistance = 8
+_playerOffset = 1.0
+_grassTemplate = NodePath("../GrassTemplate")
 _treeTemplate = NodePath("../TreeTemplate")
 
 [node name="TerrainTemplate" type="MeshInstance3D" parent="." unique_id=2117551585]
-material_override = SubResource("ShaderMaterial_0wfyh")
+material_override = SubResource("ShaderMaterial_tbgi4")
+
+[node name="GrassTemplate" type="MeshInstance3D" parent="." unique_id=66105596]
+material_override = ExtResource("3_jyhfs")
+mesh = SubResource("RibbonTrailMesh_jyhfs")
 
 [node name="TreeTemplate" type="MeshInstance3D" parent="." unique_id=1131737983]
 mesh = SubResource("CapsuleMesh_sugp2")
+
+[node name="Player" parent="." unique_id=1483300688 instance=ExtResource("3_sugp2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 373, 0)

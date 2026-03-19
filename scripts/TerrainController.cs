@@ -61,6 +61,11 @@ public partial class TerrainController : Node3D
 
     public Vector2I CurrentChunkCoord => _currentChunkCoord;
 
+    [ExportGroup("Player")]
+    [Export(PropertyHint.Range, "0, 10, 0.1, prefer_slider")]
+    private float _playerOffset = 0.0f;
+    public float PlayerOffset => _playerOffset;
+
     [ExportGroup("Grass")]
     [Export] private MeshInstance3D _grassTemplate;
     [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
@@ -143,6 +148,11 @@ public partial class TerrainController : Node3D
         {
             UpdateChunksForPosition(player.GlobalPosition);
         }
+    }
+
+    public float GetTerrainHeight(float worldX, float worldZ)
+    {
+        return _heightNoise.GetNoise2D(worldX, worldZ) * _height;
     }
 
     private void UpdateChunksForPosition(Vector3 position)

@@ -11,17 +11,22 @@ public partial class PlayerController : CharacterBody3D
     [Export] private float _jumpImpulse = 20.0f;
     public float JumpImpulse => _jumpImpulse;
 
-    [Export] private Camera3D _camera;
+    private TerrainController _terrainController;
+    private Camera3D _camera;
+    private bool _isJumping;
 
     public override void _Ready()
     {
+        _camera = GetNode<Camera3D>("CameraPivot/Camera3D");
         if (!IsInstanceValid(_camera))
         {
-            _camera = GetNode<Camera3D>("CameraPivot/Camera3D");
-            if (_camera == null)
-            {
-                GD.PrintErr(Name, ".", nameof(_Ready), " : ", "Camera3D node not found as a child of Player.");
-            }
+            GD.PrintErr(Name, ".", nameof(_Ready), " : ", "Camera3D node not found as a child of Player.");
+        }
+
+        _terrainController = GetTree().CurrentScene?.GetNodeOrNull<TerrainController>("TerrainController");
+        if (!IsInstanceValid(_terrainController))
+        {
+            GD.PrintErr(Name, ".", nameof(_Ready), " : ", "TerrainController not found.");
         }
     }
 
@@ -41,14 +46,37 @@ public partial class PlayerController : CharacterBody3D
         newVelocity.X = direction.X * _speed;
         newVelocity.Z = direction.Z * _speed;
 
-        if (!IsOnFloor())
+        if (_terrainController == null)
         {
-            newVelocity.Y -= _fallAcceleration * (float)delta;
+            Velocity = newVelocity;
+            MoveAndSlide();
+            return;
         }
 
-        if (IsOnFloor() && Input.IsActionJustPressed("jump"))
+        float terrainY = _terrainController.GetTerrainHeight(Position.X, Position.Z) + _terrainController.PlayerOffset;
+
+        if (_isJumping)
         {
-            newVelocity.Y = _jumpImpulse;
+            newVelocity.Y -= _fallAcceleration * (float)delta;
+
+            if (Position.Y <= terrainY)
+            {
+                Position = new Vector3(Position.X, terrainY, Position.Z);
+                newVelocity.Y = 0;
+                _isJumping = false;
+            }
+        }
+        else
+        {
+            if (Input.IsActionJustPressed("jump"))
+            {
+                newVelocity.Y = _jumpImpulse;
+                _isJumping = true;
+            }
+            else
+            {
+                Position = new Vector3(Position.X, terrainY, Position.Z);
+            }
         }
 
         Velocity = newVelocity;
