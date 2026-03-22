@@ -45,6 +45,7 @@ _temperatureNoise = SubResource("FastNoiseLite_tbgi4")
 _heightNoise = SubResource("FastNoiseLite_tefeu")
 _chunkTemplate = NodePath("../TerrainTemplate")
 _height = 32.0
+_renderDistance = 4
 _playerOffset = 1.0
 _grassTemplate = NodePath("../GrassTemplate")
 _treeTemplate = NodePath("../TreeTemplate")

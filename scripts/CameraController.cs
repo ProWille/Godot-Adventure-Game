@@ -13,17 +13,15 @@ public partial class CameraController : Camera3D
 
     [Export(PropertyHint.Range, "0.1f, 1.0f, 0.1f, prefer_slider")]
     private float _sensitivity = 0.5f;
-    public float Sensitivity
-    {
-        get => _sensitivity;
-        private set => _sensitivity = Math.Clamp(value, 0.1f, 1.0f);
-    }
+
+    [Export(PropertyHint.Range, "0.0f, 90.0f, 0.1f, prefer_slider")]
+    private float _cameraAngleLimit = 60.0f;
 
     public override void _Input(InputEvent @event)
     {
         if (@event is InputEventMouseMotion mouseMotion)
         {
-            Turn(mouseMotion.Relative.X * Sensitivity, mouseMotion.Relative.Y * Sensitivity);
+            Turn(mouseMotion.Relative.X * _sensitivity, mouseMotion.Relative.Y * _sensitivity);
         }
 
         if (@event is InputEventMouseButton mouseButton && mouseButton.Pressed)
@@ -85,7 +83,7 @@ public partial class CameraController : Camera3D
         RotateY(Mathf.DegToRad(-yaw));
 
         var cameraRotation = RotationDegrees;
-        cameraRotation.X = Mathf.Clamp(cameraRotation.X - pitch, -30, 30);
+        cameraRotation.X = Mathf.Clamp(cameraRotation.X - pitch, -_cameraAngleLimit, _cameraAngleLimit);
         RotationDegrees = cameraRotation;
     }
 }

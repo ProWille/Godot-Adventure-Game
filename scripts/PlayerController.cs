@@ -11,6 +11,9 @@ public partial class PlayerController : CharacterBody3D
     [Export] private float _jumpImpulse = 20.0f;
     public float JumpImpulse => _jumpImpulse;
 
+    [Export(PropertyHint.Range, "0.0f, 90.0f, 0.1f, prefer_slider")]
+    private float _cameraAngleLimit = 60.0f;
+
     private TerrainController _terrainController;
     private Camera3D _camera;
     private bool _isJumping;
@@ -110,7 +113,7 @@ public partial class PlayerController : CharacterBody3D
             return;
 
         var cameraRotation = _camera.RotationDegrees;
-        cameraRotation.X = Mathf.Clamp(cameraRotation.X - pitch, -89, 89);
+        cameraRotation.X = Mathf.Clamp(cameraRotation.X - pitch, -_cameraAngleLimit, _cameraAngleLimit);
         _camera.RotationDegrees = cameraRotation;
     }
 }
