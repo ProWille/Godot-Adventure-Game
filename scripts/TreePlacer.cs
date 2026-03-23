@@ -14,6 +14,9 @@ internal class TreePlacer
     private readonly float _minScale;
     private readonly float _maxScale;
     private readonly int _renderDistance;
+    private readonly int _densityNoiseScale;
+    private readonly int _densityNoiseAmplitude;
+    private readonly int _randomSeedBase;
 
     private readonly FastNoiseLite _placementNoise;
     private readonly Dictionary<Vector2I, MultiMeshInstance3D> _instances = [];
@@ -30,7 +33,10 @@ internal class TreePlacer
         float maxHeightThreshold,
         float minScale,
         float maxScale,
-        int renderDistance)
+        int renderDistance,
+        int densityNoiseScale,
+        int densityNoiseAmplitude,
+        int randomSeedBase)
     {
         _terrain = terrain;
         _parent = parent;
@@ -41,6 +47,9 @@ internal class TreePlacer
         _minScale = minScale;
         _maxScale = maxScale;
         _renderDistance = renderDistance;
+        _densityNoiseScale = densityNoiseScale;
+        _densityNoiseAmplitude = Math.Clamp(densityNoiseAmplitude, 0, 20);
+        _randomSeedBase = randomSeedBase;
         _placementNoise = new FastNoiseLite
         {
             Seed = new Random().Next() * 1000,
@@ -76,14 +85,12 @@ internal class TreePlacer
             return;
 
         var chunkSize = _terrain.ChunkSize;
-        var offsetX = coord.X * chunkSize;
-        var offsetZ = coord.Y * chunkSize;
 
-        var centerHeight = _terrain.HeightNoise.GetNoise2D(offsetX + chunkSize / 2f, offsetZ + chunkSize / 2f) * _terrain.Height;
+        var centerHeight = _terrain.GetHeight(coord.X + chunkSize / 2f, coord.Y + chunkSize / 2f);
         var normalizedCenterHeight = (centerHeight / _terrain.Height + 1.0f) / 2.0f;
 
-        var moisture = (_terrain.MoistureNoise.GetNoise2D(offsetX + chunkSize / 2f, offsetZ + chunkSize / 2f) + 1.0f) / 2.0f;
-        var temperature = (_terrain.TemperatureNoise.GetNoise2D(offsetX + chunkSize / 2f, offsetZ + chunkSize / 2f) + 1.0f) / 2.0f;
+        var moisture = _terrain.GetMoisture(coord.X + chunkSize / 2f, coord.Y + chunkSize / 2f);
+        var temperature = _terrain.GetTemperature(coord.X + chunkSize / 2f, coord.Y + chunkSize / 2f);
 
         var biome = _terrain.GetBiome(moisture, temperature, normalizedCenterHeight);
 
@@ -94,7 +101,7 @@ internal class TreePlacer
             return;
 
         var density = biome == BiomeType.Jungle ? _jungleDensity : _forestDensity;
-        var adjustedDensity = density + (int)(_placementNoise.GetNoise2D(coord.X * 50, coord.Y * 50) * 5);
+        var adjustedDensity = density + (int)(_placementNoise.GetNoise2D(coord.X * _densityNoiseScale, coord.Y * _densityNoiseScale) * _densityNoiseAmplitude);
         adjustedDensity = Math.Max(0, adjustedDensity);
 
         var positions = SamplePositions(coord, adjustedDensity);
@@ -112,27 +119,27 @@ internal class TreePlacer
             multiMesh.Mesh = _template.Mesh;
         }
 
-        var random = new Random(coord.X * 10000 + coord.Y + 54321);
+        var random = new Random(coord.X * 10000 + coord.Y + _randomSeedBase);
         for (int i = 0; i < positions.Count; i++)
         {
-            var pos = positions[i];
-            var scale = (float)(random.NextDouble() * (_maxScale - _minScale) + _minScale);
             var rotation = (float)(random.NextDouble() * Math.PI * 2);
+            var scale = (float)(random.NextDouble() * (_maxScale - _minScale) + _minScale);
+            var pos = positions[i];
 
             var transform = Transform3D.Identity
-                .Translated(pos)
                 .Rotated(Vector3.Up, rotation)
-                .Scaled(new Vector3(scale, scale, scale));
+                .Scaled(new Vector3(scale, scale, scale))
+                .Translated(pos);
 
             multiMesh.SetInstanceTransform(i, transform);
         }
 
-        var chunkPos = new Vector3(coord.X * chunkSize, 0, coord.Y * chunkSize);
+        var chunkPos = _terrain.GetChunkCoord(coord.X, coord.Y);
         var instance = new MultiMeshInstance3D
         {
-            Name = $"Trees_{coord.X}_{coord.Y}",
+            Name = $"Trees_{chunkPos.X}_{chunkPos.Y}",
             Multimesh = multiMesh,
-            Position = chunkPos
+            Position = new Vector3(chunkPos.X, 0, chunkPos.Y)
         };
 
         lock (_lock)
@@ -203,14 +210,14 @@ internal class TreePlacer
                 var worldX = offsetX + x;
                 var worldZ = offsetZ + z;
 
-                var height = _terrain.HeightNoise.GetNoise2D(worldX, worldZ) * _terrain.Height;
+                var height = _terrain.GetHeight(worldX, worldZ);
                 var normalizedHeight = (height / _terrain.Height + 1.0f) / 2.0f;
 
                 if (normalizedHeight < _minHeightThreshold || normalizedHeight > _maxHeightThreshold)
                     continue;
 
-                var moisture = (_terrain.MoistureNoise.GetNoise2D(worldX, worldZ) + 1.0f) / 2.0f;
-                var temperature = (_terrain.TemperatureNoise.GetNoise2D(worldX, worldZ) + 1.0f) / 2.0f;
+                var moisture = _terrain.GetMoisture(worldX, worldZ);
+                var temperature = _terrain.GetTemperature(worldX, worldZ);
 
                 var biome = _terrain.GetBiome(moisture, temperature, normalizedHeight);
                 if (biome != BiomeType.Forest && biome != BiomeType.Jungle)

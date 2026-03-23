@@ -81,7 +81,7 @@ public partial class TerrainController : Node3D
     [Export(PropertyHint.Range, "0.1f, 2.0f, 0.1f, prefer_slider")]
     private float _maxGrassHeight = 1.5f;
     [Export(PropertyHint.Range, "0.0f, 1.0f, 0.05f, prefer_slider")]
-    private float _grassHeightThreshold = 0.3f;
+    private float _grassHeightOffset = 0.3f;
 
     [ExportGroup("Trees")]
     [Export] private MeshInstance3D _treeTemplate;
@@ -97,6 +97,12 @@ public partial class TerrainController : Node3D
     private float _treeMinScale = 0.8f;
     [Export(PropertyHint.Range, "0.5f, 3.0f, 0.1f, prefer_slider")]
     private float _treeMaxScale = 1.5f;
+    [Export(PropertyHint.Range, "1, 200, 1, prefer_slider")]
+    private int _treeDensityNoiseScale = 50;
+    [Export(PropertyHint.Range, "0, 20, 1, prefer_slider")]
+    private int _treeDensityNoiseAmplitude = 5;
+    [Export(PropertyHint.Range, "0, 100000, 1, prefer_slider")]
+    private int _treeRandomSeedBase = 54321;
 
     private readonly Dictionary<Vector2I, MeshInstance3D> _chunks = [];
     private readonly object _chunkLock = new();
@@ -119,7 +125,7 @@ public partial class TerrainController : Node3D
             _grassSavannaDensity,
             _minGrassHeight,
             _maxGrassHeight,
-            _grassHeightThreshold,
+            _grassHeightOffset,
             _renderDistance);
         _grassPlacer.SetTemplate(_grassTemplate);
 
@@ -132,7 +138,10 @@ public partial class TerrainController : Node3D
             _treeMaxHeightThreshold,
             _treeMinScale,
             _treeMaxScale,
-            _renderDistance);
+            _renderDistance,
+            _treeDensityNoiseScale,
+            _treeDensityNoiseAmplitude,
+            _treeRandomSeedBase);
         _treePlacer.SetTemplate(_treeTemplate);
 
         if (!Engine.IsEditorHint())
@@ -150,9 +159,46 @@ public partial class TerrainController : Node3D
         }
     }
 
-    public float GetTerrainHeight(float worldX, float worldZ)
+    public Vector2I GetChunkCoord(float worldX, float worldZ)
+    {
+        return new Vector2I((int)Math.Floor(worldX / _chunkSize), (int)Math.Floor(worldZ / _chunkSize));
+    }
+
+    public float GetMoisture(float worldX, float worldZ)
+    {
+        return (_moistureNoise.GetNoise2D(worldX, worldZ) + 1.0f) / 2.0f;
+    }
+
+    public float GetTemperature(float worldX, float worldZ)
+    {
+        return (_temperatureNoise.GetNoise2D(worldX, worldZ) + 1.0f) / 2.0f;
+    }
+
+    public float GetHeight(float worldX, float worldZ)
     {
         return _heightNoise.GetNoise2D(worldX, worldZ) * _height;
+    }
+
+    public BiomeType GetBiome(float moisture, float temperature, float height)
+    {
+        if (height < 0.3f)
+            return BiomeType.Ocean;
+
+        if (height > 0.7f)
+            return BiomeType.Mountain;
+
+        if (temperature < 0.2f)
+            return BiomeType.Tundra;
+
+        if (temperature > 0.7f)
+            return moisture < 0.3f ? BiomeType.Desert : BiomeType.Savanna;
+
+        return moisture switch
+        {
+            < 0.3f => BiomeType.Grassland,
+            < 0.6f => BiomeType.Forest,
+            _ => BiomeType.Jungle
+        };
     }
 
     private void UpdateChunksForPosition(Vector3 position)
@@ -257,18 +303,18 @@ public partial class TerrainController : Node3D
         for (int i = 0; i < vertexArray.Length; i++)
         {
             var vertex = vertexArray[i];
-            var x = vertex.X + offsetX;
-            var z = vertex.Z + offsetZ;
+            var worldX = offsetX + vertex.X;
+            var worldZ = offsetZ + vertex.Z;
 
-            var heightValue = GetHeight(x, z);
+            var heightValue = GetHeight(worldX, worldZ);
             vertex.Y = heightValue;
 
-            var normal = GetNormal(x, z);
+            var normal = GetNormal(worldX, worldZ);
             var tangent = normal.Cross(Vector3.Up);
 
             var normalizedHeight = (heightValue / _height + 1.0f) / 2.0f;
-            var moisture = GetMoisture(x, z);
-            var temperature = GetTemperature(x, z);
+            var moisture = GetMoisture(worldX, worldZ);
+            var temperature = GetTemperature(worldX, worldZ);
             var biome = GetBiome(moisture, temperature, normalizedHeight);
 
             colorArray[i] = GetBiomeColorWeights(biome);
@@ -363,7 +409,7 @@ public partial class TerrainController : Node3D
         List<(Vector2I coord, MeshInstance3D mesh)> chunksToUpdate;
         lock (_chunkLock)
         {
-            chunksToUpdate = _chunks.Select(kv => (kv.Key, kv.Value)).ToList();
+            chunksToUpdate = [.. _chunks.Select(kv => (kv.Key, kv.Value))];
         }
 
         var threads = new List<Thread>();
@@ -416,53 +462,6 @@ public partial class TerrainController : Node3D
         }
     }
 
-    private Vector2I GetChunkCoord(float x, float z)
-    {
-        return new Vector2I((int)Math.Floor(x / _chunkSize), (int)Math.Floor(z / _chunkSize));
-    }
-
-    private Vector2I GetChunkCoord(Vector3 position)
-    {
-        return GetChunkCoord(position.X, position.Z);
-    }
-
-    private float GetMoisture(float x, float z)
-    {
-        return (_moistureNoise.GetNoise2D(x, z) + 1.0f) / 2.0f;
-    }
-
-    private float GetTemperature(float x, float z)
-    {
-        return (_temperatureNoise.GetNoise2D(x, z) + 1.0f) / 2.0f;
-    }
-
-    private float GetHeight(float x, float z)
-    {
-        return _heightNoise.GetNoise2D(x, z) * _height;
-    }
-
-    public BiomeType GetBiome(float moisture, float temperature, float height)
-    {
-        if (height < 0.3f)
-            return BiomeType.Ocean;
-
-        if (height > 0.7f)
-            return BiomeType.Mountain;
-
-        if (temperature < 0.2f)
-            return BiomeType.Tundra;
-
-        if (temperature > 0.7f)
-            return moisture < 0.3f ? BiomeType.Desert : BiomeType.Savanna;
-
-        return moisture switch
-        {
-            < 0.3f => BiomeType.Grassland,
-            < 0.6f => BiomeType.Forest,
-            _ => BiomeType.Jungle
-        };
-    }
-
     private Color GetBiomeColorWeights(BiomeType biome)
     {
         return biome switch
@@ -479,13 +478,13 @@ public partial class TerrainController : Node3D
         };
     }
 
-    private Vector3 GetNormal(float x, float z)
+    private Vector3 GetNormal(float worldX, float worldZ)
     {
         var epsilon = (float)_chunkSize / _resolution;
         var normal = new Vector3(
-            (GetHeight(x + epsilon, z) - GetHeight(x - epsilon, z)) / (2.0f * epsilon),
+            (GetHeight(worldX + epsilon, worldZ) - GetHeight(worldX - epsilon, worldZ)) / (2.0f * epsilon),
             1.0f,
-            (GetHeight(x, z + epsilon) - GetHeight(x, z - epsilon)) / (2.0f * epsilon)
+            (GetHeight(worldX, worldZ + epsilon) - GetHeight(worldX, worldZ - epsilon)) / (2.0f * epsilon)
         );
 
         return normal.Normalized();

@@ -56,7 +56,7 @@ public partial class PlayerController : CharacterBody3D
             return;
         }
 
-        float terrainY = _terrainController.GetTerrainHeight(Position.X, Position.Z) + _terrainController.PlayerOffset;
+        float terrainY = _terrainController.GetHeight(Position.X, Position.Z) + _terrainController.PlayerOffset;
 
         if (_isJumping)
         {

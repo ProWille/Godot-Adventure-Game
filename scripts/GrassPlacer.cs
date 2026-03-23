@@ -13,7 +13,7 @@ internal class GrassPlacer
     private int _savannaDensity;
     private readonly float _minHeight;
     private readonly float _maxHeight;
-    private readonly float _heightThreshold;
+    private readonly float _heightOffset;
     private readonly int _renderDistance;
 
     private readonly FastNoiseLite _placementNoise;
@@ -31,7 +31,7 @@ internal class GrassPlacer
         int savannaDensity,
         float minHeight,
         float maxHeight,
-        float heightThreshold,
+        float heightOffset,
         int renderDistance)
     {
         _terrain = terrain;
@@ -42,7 +42,7 @@ internal class GrassPlacer
         _savannaDensity = Math.Clamp(savannaDensity, 0, 500);
         _minHeight = minHeight;
         _maxHeight = maxHeight;
-        _heightThreshold = heightThreshold;
+        _heightOffset = heightOffset;
         _renderDistance = renderDistance;
         _placementNoise = new FastNoiseLite
         {
@@ -90,8 +90,6 @@ internal class GrassPlacer
             Math.Abs(coord.Y - playerChunk.Y) > _renderDistance)
             return;
 
-        var chunkPos = new Vector3(coord.X * _terrain.ChunkSize, 0, coord.Y * _terrain.ChunkSize);
-
         var (positions, biomes) = GetChunkVertexData(coord);
         if (positions.Count == 0)
             return;
@@ -119,23 +117,24 @@ internal class GrassPlacer
         var random = new Random(coord.X * 10000 + coord.Y);
         for (int i = 0; i < sampledPositions.Count; i++)
         {
-            var pos = sampledPositions[i];
-            var scale = (float)(random.NextDouble() * (_maxHeight - _minHeight) + _minHeight);
             var rotation = (float)(random.NextDouble() * Math.PI * 2);
+            var scale = (float)(random.NextDouble() * (_maxHeight - _minHeight) + _minHeight);
+            var pos = sampledPositions[i] + Vector3.Up * _heightOffset;
 
             var transform = Transform3D.Identity
-                .Translated(pos)
                 .Rotated(Vector3.Up, rotation)
-                .Scaled(new Vector3(scale, scale, scale));
+                .Scaled(new Vector3(scale, scale, scale))
+                .Translated(pos);
 
             multiMesh.SetInstanceTransform(i, transform);
         }
 
+        var chunkPos = _terrain.GetChunkCoord(coord.X, coord.Y);
         var instance = new MultiMeshInstance3D
         {
             Name = $"Grass_{coord.X}_{coord.Y}",
             Multimesh = multiMesh,
-            Position = chunkPos
+            Position = new Vector3(chunkPos.X, 0, chunkPos.Y)
         };
 
         lock (_lock)
