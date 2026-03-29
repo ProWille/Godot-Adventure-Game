@@ -3,19 +3,29 @@ using Godot;
 
 public partial class CameraController : Camera3D
 {
-    [Export(PropertyHint.Range, "0.1f, 10.0f, 0.1f, prefer_slider")]
     private float _speed = 5.0f;
+    [Export(PropertyHint.Range, "0.1f, 10.0f, 0.1f, prefer_slider")]
     public float Speed
     {
         get => _speed;
-        private set => _speed = Math.Clamp(value, 0.1f, 10.0f);
+        set => _speed = Math.Clamp(value, 0.1f, 10.0f);
     }
 
-    [Export(PropertyHint.Range, "0.1f, 1.0f, 0.1f, prefer_slider")]
     private float _sensitivity = 0.5f;
+    [Export(PropertyHint.Range, "0.1f, 1.0f, 0.1f, prefer_slider")]
+    public float Sensitivity
+    {
+        get => _sensitivity;
+        set => _sensitivity = Math.Clamp(value, 0.1f, 1.0f);
+    }
 
-    [Export(PropertyHint.Range, "0.0f, 90.0f, 0.1f, prefer_slider")]
     private float _cameraAngleLimit = 60.0f;
+    [Export(PropertyHint.Range, "0.0f, 90.0f, 0.1f, prefer_slider")]
+    public float CameraAngleLimit
+    {
+        get => _cameraAngleLimit;
+        set => _cameraAngleLimit = Math.Clamp(value, 0.0f, 90.0f);
+    }
 
     public override void _Input(InputEvent @event)
     {

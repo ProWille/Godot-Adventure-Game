@@ -86,20 +86,22 @@ _surfaces = [{
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_2vg78")
 
+[sub_resource type="LabelSettings" id="LabelSettings_tipki"]
+
 [node name="Main" type="Node3D" unique_id=909135880]
 
 [node name="Sky" parent="." unique_id=184431804 instance=ExtResource("1_tipki")]
 
-[node name="TerrainController" type="Node3D" parent="." unique_id=1824529683 node_paths=PackedStringArray("_chunkTemplate", "_grassTemplate", "_treeTemplate")]
+[node name="TerrainController" type="Node3D" parent="." unique_id=1824529683 node_paths=PackedStringArray("ChunkTemplate", "GrassTemplate", "TreeTemplate")]
 script = ExtResource("2_jyhfs")
-_moistureNoise = SubResource("FastNoiseLite_jyhfs")
-_temperatureNoise = SubResource("FastNoiseLite_tbgi4")
-_heightNoise = SubResource("FastNoiseLite_tefeu")
-_chunkTemplate = NodePath("TerrainTemplate")
-_renderDistance = 8
-_playerOffset = 1.0
-_grassTemplate = NodePath("GrassTemplate")
-_treeTemplate = NodePath("TreeTemplate2")
+MoistureNoise = SubResource("FastNoiseLite_jyhfs")
+TemperatureNoise = SubResource("FastNoiseLite_tbgi4")
+HeightNoise = SubResource("FastNoiseLite_tefeu")
+ChunkTemplate = NodePath("TerrainTemplate")
+RenderDistance = 8
+PlayerOffset = 1.0
+GrassTemplate = NodePath("GrassTemplate")
+TreeTemplate = NodePath("TreeTemplate2")
 
 [node name="TerrainTemplate" type="MeshInstance3D" parent="TerrainController" unique_id=2117551585]
 material_override = SubResource("ShaderMaterial_tbgi4")
@@ -132,3 +134,4 @@ offset_top = 10.0
 offset_right = 210.0
 offset_bottom = 34.0
 size_flags_horizontal = 0
+label_settings = SubResource("LabelSettings_tipki")

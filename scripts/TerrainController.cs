@@ -20,108 +20,175 @@ public enum BiomeType
 [Tool]
 public partial class TerrainController : Node3D
 {
-    [Export] private FastNoiseLite _moistureNoise = new();
-    public FastNoiseLite MoistureNoise => _moistureNoise;
-    [Export] private FastNoiseLite _temperatureNoise = new();
-    public FastNoiseLite TemperatureNoise => _temperatureNoise;
-    [Export] private FastNoiseLite _heightNoise = new();
-    public FastNoiseLite HeightNoise => _heightNoise;
+    private FastNoiseLite _moistureNoise = new();
+    [Export] public FastNoiseLite MoistureNoise
+    {
+        get => _moistureNoise;
+        set => _moistureNoise = value;
+    }
 
-    [Export] private MeshInstance3D _chunkTemplate;
-    [Export] private int _chunkSize = 64;
-    public int ChunkSize => _chunkSize;
+    private FastNoiseLite _temperatureNoise = new();
+    [Export] public FastNoiseLite TemperatureNoise
+    {
+        get => _temperatureNoise;
+        set => _temperatureNoise = value;
+    }
 
-    [Export(PropertyHint.Range, "4, 256, 4, prefer_slider")]
+    private FastNoiseLite _heightNoise = new();
+    [Export] public FastNoiseLite HeightNoise
+    {
+        get => _heightNoise;
+        set => _heightNoise = value;
+    }
+
+    private MeshInstance3D _chunkTemplate;
+    [Export] public MeshInstance3D ChunkTemplate
+    {
+        get => _chunkTemplate;
+        set => _chunkTemplate = value;
+    }
+
+    private int _chunkSize = 64;
+    [Export] public int ChunkSize
+    {
+        get => _chunkSize;
+        set => _chunkSize = value;
+    }
+
     private int _resolution = 32;
+    [Export(PropertyHint.Range, "4, 256, 4, prefer_slider")]
     public int Resolution
     {
         get => _resolution;
-        set
-        {
-            _resolution = Math.Clamp(value, 4, 256);
-            RegenerateAllChunks();
-        }
+        set { _resolution = Math.Clamp(value, 4, 256); RegenerateAllChunks(); }
     }
 
-    [Export(PropertyHint.Range, "4.0f, 256.0f, 4.0f, prefer_slider")]
     private float _height = 64.0f;
+    [Export(PropertyHint.Range, "4.0f, 256.0f, 4.0f, prefer_slider")]
     public float Height
     {
         get => _height;
-        set
-        {
-            _height = Math.Clamp(value, 4.0f, 256.0f);
-            RegenerateAllChunks();
-        }
+        set { _height = Math.Clamp(value, 4.0f, 256.0f); RegenerateAllChunks(); }
     }
 
-    [Export(PropertyHint.Range, "1, 24, 1, prefer_slider")]
     private int _renderDistance = 4;
-    public int RenderDistance => _renderDistance;
+    [Export(PropertyHint.Range, "1, 24, 1, prefer_slider")]
+    public int RenderDistance
+    {
+        get => _renderDistance;
+        set => _renderDistance = value;
+    }
 
     public Vector2I CurrentChunkCoord => _currentChunkCoord;
 
     [ExportGroup("Biome Colors")]
-    [Export] private Color _oceanColor = new(0.0f, 0.2f, 0.8f);
-    [Export] private Color _desertColor = new(0.9f, 0.8f, 0.5f);
-    [Export] private Color _savannaColor = new(0.8f, 0.7f, 0.4f);
-    [Export] private Color _grasslandColor = new(0.4f, 0.8f, 0.2f);
-    [Export] private Color _forestColor = new(0.2f, 0.6f, 0.1f);
-    [Export] private Color _jungleColor = new(0.1f, 0.5f, 0.1f);
-    [Export] private Color _tundraColor = new(0.8f, 0.9f, 1.0f);
-    [Export] private Color _mountainColor = new(0.7f, 0.7f, 0.8f);
+    private Color _oceanColor = new(0.0f, 0.2f, 0.8f);
+    [Export] public Color OceanColor
+    {
+        get => _oceanColor;
+        set { _oceanColor = value; RegenerateAllChunks(); }
+    }
+
+    private Color _desertColor = new(0.9f, 0.8f, 0.5f);
+    [Export] public Color DesertColor
+    {
+        get => _desertColor;
+        set { _desertColor = value; RegenerateAllChunks(); }
+    }
+
+    private Color _savannaColor = new(0.8f, 0.7f, 0.4f);
+    [Export] public Color SavannaColor
+    {
+        get => _savannaColor;
+        set { _savannaColor = value; RegenerateAllChunks(); }
+    }
+
+    private Color _grasslandColor = new(0.4f, 0.8f, 0.2f);
+    [Export] public Color GrasslandColor
+    {
+        get => _grasslandColor;
+        set { _grasslandColor = value; RegenerateAllChunks(); }
+    }
+
+    private Color _forestColor = new(0.2f, 0.6f, 0.1f);
+    [Export] public Color ForestColor
+    {
+        get => _forestColor;
+        set { _forestColor = value; RegenerateAllChunks(); }
+    }
+
+    private Color _jungleColor = new(0.1f, 0.5f, 0.1f);
+    [Export] public Color JungleColor
+    {
+        get => _jungleColor;
+        set { _jungleColor = value; RegenerateAllChunks(); }
+    }
+
+    private Color _tundraColor = new(0.8f, 0.9f, 1.0f);
+    [Export] public Color TundraColor
+    {
+        get => _tundraColor;
+        set { _tundraColor = value; RegenerateAllChunks(); }
+    }
+
+    private Color _mountainColor = new(0.7f, 0.7f, 0.8f);
+    [Export] public Color MountainColor
+    {
+        get => _mountainColor;
+        set { _mountainColor = value; RegenerateAllChunks(); }
+    }
 
     [ExportGroup("Biome Thresholds")]
-    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
     private float _oceanHeightThreshold = 0.4f;
+    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
     public float OceanHeightThreshold
     {
         get => _oceanHeightThreshold;
         set { _oceanHeightThreshold = Math.Clamp(value, 0.0f, 1.0f); RegenerateAllChunks(); }
     }
 
-    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
     private float _mountainHeightThreshold = 0.7f;
+    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
     public float MountainHeightThreshold
     {
         get => _mountainHeightThreshold;
         set { _mountainHeightThreshold = Math.Clamp(value, 0.0f, 1.0f); RegenerateAllChunks(); }
     }
 
-    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
     private float _tundraTemperatureThreshold = 0.2f;
+    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
     public float TundraTemperatureThreshold
     {
         get => _tundraTemperatureThreshold;
         set { _tundraTemperatureThreshold = Math.Clamp(value, 0.0f, 1.0f); RegenerateAllChunks(); }
     }
 
-    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
     private float _desertTemperatureThreshold = 0.7f;
+    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
     public float DesertTemperatureThreshold
     {
         get => _desertTemperatureThreshold;
         set { _desertTemperatureThreshold = Math.Clamp(value, 0.0f, 1.0f); RegenerateAllChunks(); }
     }
 
-    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
     private float _desertMoistureThreshold = 0.3f;
+    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
     public float DesertMoistureThreshold
     {
         get => _desertMoistureThreshold;
         set { _desertMoistureThreshold = Math.Clamp(value, 0.0f, 1.0f); RegenerateAllChunks(); }
     }
 
-    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
     private float _grasslandMoistureThreshold = 0.3f;
+    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
     public float GrasslandMoistureThreshold
     {
         get => _grasslandMoistureThreshold;
         set { _grasslandMoistureThreshold = Math.Clamp(value, 0.0f, 1.0f); RegenerateAllChunks(); }
     }
 
-    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
     private float _forestMoistureThreshold = 0.6f;
+    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
     public float ForestMoistureThreshold
     {
         get => _forestMoistureThreshold;
@@ -129,47 +196,157 @@ public partial class TerrainController : Node3D
     }
 
     [ExportGroup("Player Settings")]
-    [Export(PropertyHint.Range, "0, 10, 0.1, prefer_slider")]
     private float _playerOffset = 0.0f;
-    public float PlayerOffset => _playerOffset;
+    [Export(PropertyHint.Range, "0, 10, 0.1, prefer_slider")]
+    public float PlayerOffset
+    {
+        get => _playerOffset;
+        set => _playerOffset = value;
+    }
 
     [ExportGroup("Grass Settings")]
-    [Export] private MeshInstance3D _grassTemplate;
-    [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
+    private MeshInstance3D _grassTemplate;
+    [Export] public MeshInstance3D GrassTemplate
+    {
+        get => _grassTemplate;
+        set => _grassTemplate = value;
+    }
+
     private int _grasslandDensity = 100;
     [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
+    public int GrasslandDensity
+    {
+        get => _grasslandDensity;
+        set => _grasslandDensity = value;
+    }
+
     private int _grassForestDensity = 80;
     [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
+    public int GrassForestDensity
+    {
+        get => _grassForestDensity;
+        set => _grassForestDensity = value;
+    }
+
     private int _grassJungleDensity = 120;
     [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
+    public int GrassJungleDensity
+    {
+        get => _grassJungleDensity;
+        set => _grassJungleDensity = value;
+    }
+
     private int _grassSavannaDensity = 60;
-    [Export(PropertyHint.Range, "0.1f, 2.0f, 0.1f, prefer_slider")]
+    [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
+    public int GrassSavannaDensity
+    {
+        get => _grassSavannaDensity;
+        set => _grassSavannaDensity = value;
+    }
+
     private float _minGrassHeight = 0.5f;
     [Export(PropertyHint.Range, "0.1f, 2.0f, 0.1f, prefer_slider")]
+    public float MinGrassHeight
+    {
+        get => _minGrassHeight;
+        set => _minGrassHeight = value;
+    }
+
     private float _maxGrassHeight = 1.5f;
-    [Export(PropertyHint.Range, "0.0f, 1.0f, 0.05f, prefer_slider")]
+    [Export(PropertyHint.Range, "0.1f, 2.0f, 0.1f, prefer_slider")]
+    public float MaxGrassHeight
+    {
+        get => _maxGrassHeight;
+        set => _maxGrassHeight = value;
+    }
+
     private float _grassHeightOffset = 0.3f;
+    [Export(PropertyHint.Range, "0.0f, 1.0f, 0.05f, prefer_slider")]
+    public float GrassHeightOffset
+    {
+        get => _grassHeightOffset;
+        set => _grassHeightOffset = value;
+    }
 
     [ExportGroup("Tree Settings")]
-    [Export] private MeshInstance3D _treeTemplate;
-    [Export(PropertyHint.Range, "0, 50, 1, prefer_slider")]
+    private MeshInstance3D _treeTemplate;
+    [Export] public MeshInstance3D TreeTemplate
+    {
+        get => _treeTemplate;
+        set => _treeTemplate = value;
+    }
+
     private int _treeForestDensity = 10;
     [Export(PropertyHint.Range, "0, 50, 1, prefer_slider")]
+    public int TreeForestDensity
+    {
+        get => _treeForestDensity;
+        set => _treeForestDensity = value;
+    }
+
     private int _treeJungleDensity = 20;
-    [Export(PropertyHint.Range, "0.0f, 1.0f, 0.05f, prefer_slider")]
+    [Export(PropertyHint.Range, "0, 50, 1, prefer_slider")]
+    public int TreeJungleDensity
+    {
+        get => _treeJungleDensity;
+        set => _treeJungleDensity = value;
+    }
+
     private float _treeMinHeightThreshold = 0.35f;
     [Export(PropertyHint.Range, "0.0f, 1.0f, 0.05f, prefer_slider")]
+    public float TreeMinHeightThreshold
+    {
+        get => _treeMinHeightThreshold;
+        set => _treeMinHeightThreshold = value;
+    }
+
     private float _treeMaxHeightThreshold = 0.65f;
-    [Export(PropertyHint.Range, "0.5f, 3.0f, 0.1f, prefer_slider")]
+    [Export(PropertyHint.Range, "0.0f, 1.0f, 0.05f, prefer_slider")]
+    public float TreeMaxHeightThreshold
+    {
+        get => _treeMaxHeightThreshold;
+        set => _treeMaxHeightThreshold = value;
+    }
+
     private float _treeMinScale = 0.8f;
     [Export(PropertyHint.Range, "0.5f, 3.0f, 0.1f, prefer_slider")]
+    public float TreeMinScale
+    {
+        get => _treeMinScale;
+        set => _treeMinScale = value;
+    }
+
     private float _treeMaxScale = 1.5f;
-    [Export(PropertyHint.Range, "1, 200, 1, prefer_slider")]
+    [Export(PropertyHint.Range, "0.5f, 3.0f, 0.1f, prefer_slider")]
+    public float TreeMaxScale
+    {
+        get => _treeMaxScale;
+        set => _treeMaxScale = value;
+    }
+
     private int _treeDensityNoiseScale = 50;
-    [Export(PropertyHint.Range, "0, 20, 1, prefer_slider")]
+    [Export(PropertyHint.Range, "1, 200, 1, prefer_slider")]
+    public int TreeDensityNoiseScale
+    {
+        get => _treeDensityNoiseScale;
+        set => _treeDensityNoiseScale = value;
+    }
+
     private int _treeDensityNoiseAmplitude = 5;
-    [Export(PropertyHint.Range, "0, 100000, 1, prefer_slider")]
+    [Export(PropertyHint.Range, "0, 20, 1, prefer_slider")]
+    public int TreeDensityNoiseAmplitude
+    {
+        get => _treeDensityNoiseAmplitude;
+        set => _treeDensityNoiseAmplitude = value;
+    }
+
     private int _treeRandomSeedBase = 54321;
+    [Export(PropertyHint.Range, "0, 100000, 1, prefer_slider")]
+    public int TreeRandomSeedBase
+    {
+        get => _treeRandomSeedBase;
+        set => _treeRandomSeedBase = value;
+    }
 
     private readonly Dictionary<Vector2I, MeshInstance3D> _chunks = [];
     private readonly object _chunkLock = new();
@@ -177,6 +354,7 @@ public partial class TerrainController : Node3D
     private Vector2I _currentChunkCoord;
     private GrassPlacer _grassPlacer;
     private TreePlacer _treePlacer;
+    private Node3D _player;
 
     public override void _Ready()
     {
@@ -215,14 +393,19 @@ public partial class TerrainController : Node3D
         {
             UpdateChunksForPosition(Vector3.Zero);
         }
+
+        _player = GetTree().CurrentScene?.GetNode<Node3D>("Player");
+        if (!IsInstanceValid(_player))
+        {
+            GD.PrintErr(Name, ".", nameof(_Ready), " : ", "Player node not found in current scene.");
+        }
     }
 
     public override void _Process(double delta)
     {
-        var player = GetTree().CurrentScene?.GetNode<Node3D>("Player");
-        if (IsInstanceValid(player))
+        if (IsInstanceValid(_player))
         {
-            UpdateChunksForPosition(player.GlobalPosition);
+            UpdateChunksForPosition(_player.GlobalPosition);
         }
     }
 

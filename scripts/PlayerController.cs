@@ -1,22 +1,40 @@
+using System;
 using Godot;
 
 public partial class PlayerController : CharacterBody3D
 {
-    [Export] private float _speed = 15.0f;
-    public float Speed => _speed;
+    private float _speed = 15.0f;
+    [Export] public float Speed
+    {
+        get => _speed;
+        set => _speed = value;
+    }
 
-    [Export] private float _fallAcceleration = 50.0f;
-    public float FallAcceleration => _fallAcceleration;
+    private float _fallAcceleration = 50.0f;
+    [Export] public float FallAcceleration
+    {
+        get => _fallAcceleration;
+        set => _fallAcceleration = value;
+    }
 
-    [Export] private float _jumpImpulse = 20.0f;
-    public float JumpImpulse => _jumpImpulse;
+    private float _jumpImpulse = 20.0f;
+    [Export] public float JumpImpulse
+    {
+        get => _jumpImpulse;
+        set => _jumpImpulse = value;
+    }
 
-    [Export(PropertyHint.Range, "0.0f, 90.0f, 0.1f, prefer_slider")]
     private float _cameraAngleLimit = 60.0f;
+    [Export(PropertyHint.Range, "0.0f, 90.0f, 0.1f, prefer_slider")]
+    public float CameraAngleLimit
+    {
+        get => _cameraAngleLimit;
+        set => _cameraAngleLimit = Math.Clamp(value, 0.0f, 90.0f);
+    }
 
     private TerrainController _terrainController;
     private Camera3D _camera;
-    private bool _isJumping;
+    private bool _isJumping = false;
 
     public override void _Ready()
     {
@@ -49,7 +67,7 @@ public partial class PlayerController : CharacterBody3D
         newVelocity.X = direction.X * _speed;
         newVelocity.Z = direction.Z * _speed;
 
-        if (_terrainController == null)
+        if (!IsInstanceValid(_terrainController))
         {
             Velocity = newVelocity;
             MoveAndSlide();
@@ -109,7 +127,7 @@ public partial class PlayerController : CharacterBody3D
     {
         RotateY(Mathf.DegToRad(-yaw));
 
-        if (_camera == null)
+        if (!IsInstanceValid(_camera))
             return;
 
         var cameraRotation = _camera.RotationDegrees;
