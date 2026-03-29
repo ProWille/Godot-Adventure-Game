@@ -1,14 +1,13 @@
 [gd_scene format=4 uid="uid://cn8edqjhbxsuc"]
 
 [ext_resource type="Shader" uid="uid://fvgd8s2ryqg8" path="res://shaders/terrain.gdshader" id="1_sugp2"]
+[ext_resource type="PackedScene" uid="uid://xth1go5lw1eu" path="res://scenes/sky.tscn" id="1_tipki"]
 [ext_resource type="Script" uid="uid://cawkxwq67rs1v" path="res://scripts/TerrainController.cs" id="2_jyhfs"]
 [ext_resource type="Material" uid="uid://el5y10hnh13g" path="res://addons/terrain_3d/extras/particle_example/process_material.tres" id="3_jyhfs"]
 [ext_resource type="Material" uid="uid://ljo1wt61kbkq" path="res://addons/terrain_3d/extras/particle_example/grass_material.tres" id="4_tbgi4"]
 [ext_resource type="PackedScene" uid="uid://byfa1tjtd5hfw" path="res://scenes/camera.tscn" id="5_tbgi4"]
 [ext_resource type="Script" uid="uid://k11yvnkcl7to" path="res://scripts/PositionDisplay.cs" id="6_tefeu"]
 [ext_resource type="Texture2D" uid="uid://clf3b6b0d2mih" path="res://assets/FantasyFree/Separate_assets_glb/fir_001_Texture_1.png" id="7_o6xl0"]
-
-[sub_resource type="Environment" id="Environment_ij1v8"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_jyhfs"]
 
@@ -22,6 +21,19 @@ render_priority = 0
 shader = ExtResource("1_sugp2")
 shader_parameter/texture_scale = 10.0
 shader_parameter/use_textures = false
+shader_parameter/water_blue_threshold = 0.7
+shader_parameter/water_red_limit = 0.4
+shader_parameter/water_green_limit = 0.4
+shader_parameter/sand_red_threshold = 0.8
+shader_parameter/sand_green_limit = 0.4
+shader_parameter/forest_blue_threshold = 0.6
+shader_parameter/forest_green_min = 0.3
+shader_parameter/grass_green_threshold = 0.6
+shader_parameter/grass_blue_limit = 0.4
+shader_parameter/snow_red_threshold = 0.5
+shader_parameter/snow_blue_threshold = 0.5
+shader_parameter/rock_red_threshold = 0.5
+shader_parameter/rock_green_threshold = 0.5
 
 [sub_resource type="Curve" id="Curve_o6xl0"]
 
@@ -76,35 +88,35 @@ shadow_mesh = SubResource("ArrayMesh_2vg78")
 
 [node name="Main" type="Node3D" unique_id=909135880]
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1025938306]
-environment = SubResource("Environment_ij1v8")
-
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=555491273]
+[node name="Sky" parent="." unique_id=184431804 instance=ExtResource("1_tipki")]
 
 [node name="TerrainController" type="Node3D" parent="." unique_id=1824529683 node_paths=PackedStringArray("_chunkTemplate", "_grassTemplate", "_treeTemplate")]
 script = ExtResource("2_jyhfs")
 _moistureNoise = SubResource("FastNoiseLite_jyhfs")
 _temperatureNoise = SubResource("FastNoiseLite_tbgi4")
 _heightNoise = SubResource("FastNoiseLite_tefeu")
-_chunkTemplate = NodePath("../TerrainTemplate")
-_height = 32.0
+_chunkTemplate = NodePath("TerrainTemplate")
+_renderDistance = 8
 _playerOffset = 1.0
-_grassTemplate = NodePath("../GrassTemplate")
-_treeTemplate = NodePath("../TreeTemplate2")
+_grassTemplate = NodePath("GrassTemplate")
+_treeTemplate = NodePath("TreeTemplate2")
 
-[node name="TerrainTemplate" type="MeshInstance3D" parent="." unique_id=2117551585]
+[node name="TerrainTemplate" type="MeshInstance3D" parent="TerrainController" unique_id=2117551585]
 material_override = SubResource("ShaderMaterial_tbgi4")
+skeleton = NodePath("../..")
 
-[node name="GrassTemplate" type="MeshInstance3D" parent="." unique_id=66105596]
+[node name="GrassTemplate" type="MeshInstance3D" parent="TerrainController" unique_id=66105596]
 visible = false
 material_override = ExtResource("3_jyhfs")
 mesh = SubResource("RibbonTrailMesh_jyhfs")
+skeleton = NodePath("../..")
 
-[node name="TreeTemplate" type="MeshInstance3D" parent="." unique_id=1131737983]
+[node name="TreeTemplate" type="MeshInstance3D" parent="TerrainController" unique_id=1131737983]
 visible = false
 mesh = SubResource("CapsuleMesh_sugp2")
+skeleton = NodePath("../..")
 
-[node name="TreeTemplate2" type="MeshInstance3D" parent="." unique_id=1508519750]
+[node name="TreeTemplate2" type="MeshInstance3D" parent="TerrainController" unique_id=1508519750]
 visible = false
 mesh = SubResource("ArrayMesh_tipki")
 skeleton = NodePath("")

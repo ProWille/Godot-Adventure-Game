@@ -61,12 +61,79 @@ public partial class TerrainController : Node3D
 
     public Vector2I CurrentChunkCoord => _currentChunkCoord;
 
-    [ExportGroup("Player")]
+    [ExportGroup("Biome Colors")]
+    [Export] private Color _oceanColor = new(0.0f, 0.2f, 0.8f);
+    [Export] private Color _desertColor = new(0.9f, 0.8f, 0.5f);
+    [Export] private Color _savannaColor = new(0.8f, 0.7f, 0.4f);
+    [Export] private Color _grasslandColor = new(0.4f, 0.8f, 0.2f);
+    [Export] private Color _forestColor = new(0.2f, 0.6f, 0.1f);
+    [Export] private Color _jungleColor = new(0.1f, 0.5f, 0.1f);
+    [Export] private Color _tundraColor = new(0.8f, 0.9f, 1.0f);
+    [Export] private Color _mountainColor = new(0.7f, 0.7f, 0.8f);
+
+    [ExportGroup("Biome Thresholds")]
+    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
+    private float _oceanHeightThreshold = 0.4f;
+    public float OceanHeightThreshold
+    {
+        get => _oceanHeightThreshold;
+        set { _oceanHeightThreshold = Math.Clamp(value, 0.0f, 1.0f); RegenerateAllChunks(); }
+    }
+
+    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
+    private float _mountainHeightThreshold = 0.7f;
+    public float MountainHeightThreshold
+    {
+        get => _mountainHeightThreshold;
+        set { _mountainHeightThreshold = Math.Clamp(value, 0.0f, 1.0f); RegenerateAllChunks(); }
+    }
+
+    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
+    private float _tundraTemperatureThreshold = 0.2f;
+    public float TundraTemperatureThreshold
+    {
+        get => _tundraTemperatureThreshold;
+        set { _tundraTemperatureThreshold = Math.Clamp(value, 0.0f, 1.0f); RegenerateAllChunks(); }
+    }
+
+    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
+    private float _desertTemperatureThreshold = 0.7f;
+    public float DesertTemperatureThreshold
+    {
+        get => _desertTemperatureThreshold;
+        set { _desertTemperatureThreshold = Math.Clamp(value, 0.0f, 1.0f); RegenerateAllChunks(); }
+    }
+
+    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
+    private float _desertMoistureThreshold = 0.3f;
+    public float DesertMoistureThreshold
+    {
+        get => _desertMoistureThreshold;
+        set { _desertMoistureThreshold = Math.Clamp(value, 0.0f, 1.0f); RegenerateAllChunks(); }
+    }
+
+    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
+    private float _grasslandMoistureThreshold = 0.3f;
+    public float GrasslandMoistureThreshold
+    {
+        get => _grasslandMoistureThreshold;
+        set { _grasslandMoistureThreshold = Math.Clamp(value, 0.0f, 1.0f); RegenerateAllChunks(); }
+    }
+
+    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
+    private float _forestMoistureThreshold = 0.6f;
+    public float ForestMoistureThreshold
+    {
+        get => _forestMoistureThreshold;
+        set { _forestMoistureThreshold = Math.Clamp(value, 0.0f, 1.0f); RegenerateAllChunks(); }
+    }
+
+    [ExportGroup("Player Settings")]
     [Export(PropertyHint.Range, "0, 10, 0.1, prefer_slider")]
     private float _playerOffset = 0.0f;
     public float PlayerOffset => _playerOffset;
 
-    [ExportGroup("Grass")]
+    [ExportGroup("Grass Settings")]
     [Export] private MeshInstance3D _grassTemplate;
     [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
     private int _grasslandDensity = 100;
@@ -83,7 +150,7 @@ public partial class TerrainController : Node3D
     [Export(PropertyHint.Range, "0.0f, 1.0f, 0.05f, prefer_slider")]
     private float _grassHeightOffset = 0.3f;
 
-    [ExportGroup("Trees")]
+    [ExportGroup("Tree Settings")]
     [Export] private MeshInstance3D _treeTemplate;
     [Export(PropertyHint.Range, "0, 50, 1, prefer_slider")]
     private int _treeForestDensity = 10;
@@ -181,24 +248,23 @@ public partial class TerrainController : Node3D
 
     public BiomeType GetBiome(float moisture, float temperature, float height)
     {
-        if (height < 0.3f)
+        if (height < _oceanHeightThreshold)
             return BiomeType.Ocean;
 
-        if (height > 0.7f)
+        if (height > _mountainHeightThreshold)
             return BiomeType.Mountain;
 
-        if (temperature < 0.2f)
+        if (temperature < _tundraTemperatureThreshold)
             return BiomeType.Tundra;
 
-        if (temperature > 0.7f)
-            return moisture < 0.3f ? BiomeType.Desert : BiomeType.Savanna;
+        if (temperature > _desertTemperatureThreshold)
+            return moisture < _desertMoistureThreshold ? BiomeType.Desert : BiomeType.Savanna;
 
-        return moisture switch
-        {
-            < 0.3f => BiomeType.Grassland,
-            < 0.6f => BiomeType.Forest,
-            _ => BiomeType.Jungle
-        };
+        if (moisture < _grasslandMoistureThreshold)
+            return BiomeType.Grassland;
+        if (moisture < _forestMoistureThreshold)
+            return BiomeType.Forest;
+        return BiomeType.Jungle;
     }
 
     private void UpdateChunksForPosition(Vector3 position)
@@ -466,14 +532,14 @@ public partial class TerrainController : Node3D
     {
         return biome switch
         {
-            BiomeType.Ocean => new Color(0.0f, 0.2f, 0.8f),
-            BiomeType.Desert => new Color(0.9f, 0.8f, 0.5f),
-            BiomeType.Savanna => new Color(0.8f, 0.7f, 0.4f),
-            BiomeType.Grassland => new Color(0.4f, 0.8f, 0.2f),
-            BiomeType.Forest => new Color(0.2f, 0.6f, 0.1f),
-            BiomeType.Jungle => new Color(0.1f, 0.5f, 0.1f),
-            BiomeType.Tundra => new Color(0.8f, 0.9f, 1.0f),
-            BiomeType.Mountain => new Color(0.7f, 0.7f, 0.8f),
+            BiomeType.Ocean => _oceanColor,
+            BiomeType.Desert => _desertColor,
+            BiomeType.Savanna => _savannaColor,
+            BiomeType.Grassland => _grasslandColor,
+            BiomeType.Forest => _forestColor,
+            BiomeType.Jungle => _jungleColor,
+            BiomeType.Tundra => _tundraColor,
+            BiomeType.Mountain => _mountainColor,
             _ => new Color(0.5f, 0.5f, 0.5f)
         };
     }

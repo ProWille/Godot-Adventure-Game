@@ -10,6 +10,20 @@ uniform sampler2D water_texture : source_color;
 uniform float texture_scale = 10.0;
 uniform bool use_textures = false;
 
+uniform float water_blue_threshold = 0.7;
+uniform float water_red_limit = 0.4;
+uniform float water_green_limit = 0.4;
+uniform float sand_red_threshold = 0.8;
+uniform float sand_green_limit = 0.4;
+uniform float forest_blue_threshold = 0.6;
+uniform float forest_green_min = 0.3;
+uniform float grass_green_threshold = 0.6;
+uniform float grass_blue_limit = 0.4;
+uniform float snow_red_threshold = 0.5;
+uniform float snow_blue_threshold = 0.5;
+uniform float rock_red_threshold = 0.5;
+uniform float rock_green_threshold = 0.5;
+
 varying vec3 vertex_color;
 
 void vertex() {
@@ -32,17 +46,17 @@ void fragment() {
 	vec3 snow = use_textures ? texture(snow_texture, uv_scaled).rgb : vec3(0.9, 0.92, 0.95);
 	vec3 water = use_textures ? texture(water_texture, uv_scaled).rgb : vec3(0.1, 0.4, 0.7);
 	
-	if (normalized.b > 0.7 && normalized.r < 0.4 && normalized.g < 0.4) {
+	if (normalized.b > water_blue_threshold && normalized.r < water_red_limit && normalized.g < water_green_limit) {
 		color = water;
-	} else if (normalized.r > 0.8 && normalized.g < 0.4) {
+	} else if (normalized.r > sand_red_threshold && normalized.g < sand_green_limit) {
 		color = sand;
-	} else if (normalized.b > 0.6 && normalized.g > 0.3) {
+	} else if (normalized.b > forest_blue_threshold && normalized.g > forest_green_min) {
 		color = forest;
-	} else if (normalized.g > 0.6 && normalized.b < 0.4) {
+	} else if (normalized.g > grass_green_threshold && normalized.b < grass_blue_limit) {
 		color = grass;
-	} else if (normalized.r > 0.5 && normalized.b > 0.5) {
+	} else if (normalized.r > snow_red_threshold && normalized.b > snow_blue_threshold) {
 		color = snow;
-	} else if (normalized.r > 0.5 && normalized.g > 0.5) {
+	} else if (normalized.r > rock_red_threshold && normalized.g > rock_green_threshold) {
 		color = rock;
 	} else {
 		color = biome_color;
