@@ -22,6 +22,7 @@ mono_crash.*.json
 /assets/
 /addons/
 /data/
+/demo/
 .vscode/
 *.old
 *.uid

@@ -81,63 +81,6 @@ public partial class TerrainController : Node3D
 
     public Vector2I CurrentChunkCoord => _currentChunkCoord;
 
-    [ExportGroup("Biome Colors")]
-    private Color _oceanColor = new(0.0f, 0.2f, 0.8f);
-    [Export] public Color OceanColor
-    {
-        get => _oceanColor;
-        set { _oceanColor = value; RegenerateAllChunks(); }
-    }
-
-    private Color _desertColor = new(0.9f, 0.8f, 0.5f);
-    [Export] public Color DesertColor
-    {
-        get => _desertColor;
-        set { _desertColor = value; RegenerateAllChunks(); }
-    }
-
-    private Color _savannaColor = new(0.8f, 0.7f, 0.4f);
-    [Export] public Color SavannaColor
-    {
-        get => _savannaColor;
-        set { _savannaColor = value; RegenerateAllChunks(); }
-    }
-
-    private Color _grasslandColor = new(0.4f, 0.8f, 0.2f);
-    [Export] public Color GrasslandColor
-    {
-        get => _grasslandColor;
-        set { _grasslandColor = value; RegenerateAllChunks(); }
-    }
-
-    private Color _forestColor = new(0.2f, 0.6f, 0.1f);
-    [Export] public Color ForestColor
-    {
-        get => _forestColor;
-        set { _forestColor = value; RegenerateAllChunks(); }
-    }
-
-    private Color _jungleColor = new(0.1f, 0.5f, 0.1f);
-    [Export] public Color JungleColor
-    {
-        get => _jungleColor;
-        set { _jungleColor = value; RegenerateAllChunks(); }
-    }
-
-    private Color _tundraColor = new(0.8f, 0.9f, 1.0f);
-    [Export] public Color TundraColor
-    {
-        get => _tundraColor;
-        set { _tundraColor = value; RegenerateAllChunks(); }
-    }
-
-    private Color _mountainColor = new(0.7f, 0.7f, 0.8f);
-    [Export] public Color MountainColor
-    {
-        get => _mountainColor;
-        set { _mountainColor = value; RegenerateAllChunks(); }
-    }
-
     [ExportGroup("Biome Thresholds")]
     private float _oceanHeightThreshold = 0.4f;
     [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
@@ -429,6 +372,18 @@ public partial class TerrainController : Node3D
         return _heightNoise.GetNoise2D(worldX, worldZ) * _height;
     }
 
+    public Vector3 GetNormal(float worldX, float worldZ)
+    {
+        var epsilon = (float)_chunkSize / _resolution;
+        var normal = new Vector3(
+            (GetHeight(worldX + epsilon, worldZ) - GetHeight(worldX - epsilon, worldZ)) / (2.0f * epsilon),
+            1.0f,
+            (GetHeight(worldX, worldZ + epsilon) - GetHeight(worldX, worldZ - epsilon)) / (2.0f * epsilon)
+        );
+
+        return normal.Normalized();
+    }
+
     public BiomeType GetBiome(float moisture, float temperature, float height)
     {
         if (height < _oceanHeightThreshold)
@@ -566,7 +521,7 @@ public partial class TerrainController : Node3D
             var temperature = GetTemperature(worldX, worldZ);
             var biome = GetBiome(moisture, temperature, normalizedHeight);
 
-            colorArray[i] = GetBiomeColorWeights(biome);
+            colorArray[i] = new Color((float)biome / 8.0f, 0.0f, 0.0f, 1.0f);
 
             vertexArray[i] = vertex;
             normalArray[i] = normal;
@@ -596,61 +551,6 @@ public partial class TerrainController : Node3D
 
         _grassPlacer?.RemoveForChunk(coord);
         _treePlacer?.RemoveForChunk(coord);
-    }
-
-    private void GenerateChunkMesh(MeshInstance3D chunkMesh, Vector2I coord)
-    {
-        var plane = new PlaneMesh
-        {
-            SubdivideDepth = _resolution,
-            SubdivideWidth = _resolution,
-            Size = new Vector2(_chunkSize, _chunkSize)
-        };
-
-        var planeArrays = plane.GetMeshArrays();
-
-        var vertexArray = planeArrays[(int)Mesh.ArrayType.Vertex].AsVector3Array();
-        var normalArray = planeArrays[(int)Mesh.ArrayType.Normal].AsVector3Array();
-        var tangentArray = planeArrays[(int)Mesh.ArrayType.Tangent].AsFloat32Array();
-        var colorArray = new Color[vertexArray.Length];
-
-        var offsetX = coord.X * _chunkSize;
-        var offsetZ = coord.Y * _chunkSize;
-
-        for (int i = 0; i < vertexArray.Length; i++)
-        {
-            var vertex = vertexArray[i];
-            var x = vertex.X + offsetX;
-            var z = vertex.Z + offsetZ;
-            
-            var heightValue = GetHeight(x, z);
-            vertex.Y = heightValue;
-            
-            var normal = GetNormal(x, z);
-            var tangent = normal.Cross(Vector3.Up);
-
-            var normalizedHeight = (heightValue / _height + 1.0f) / 2.0f;
-            var moisture = GetMoisture(x, z);
-            var temperature = GetTemperature(x, z);
-            var biome = GetBiome(moisture, temperature, normalizedHeight);
-            
-            colorArray[i] = GetBiomeColorWeights(biome);
-
-            vertexArray[i] = vertex;
-            normalArray[i] = normal;
-            tangentArray[4 * i] = tangent.X;
-            tangentArray[4 * i + 1] = tangent.Y;
-            tangentArray[4 * i + 2] = tangent.Z;
-        }
-
-        planeArrays[(int)Mesh.ArrayType.Vertex] = vertexArray.AsSpan();
-        planeArrays[(int)Mesh.ArrayType.Normal] = normalArray.AsSpan();
-        planeArrays[(int)Mesh.ArrayType.Tangent] = tangentArray.AsSpan();
-        planeArrays[(int)Mesh.ArrayType.Color] = colorArray.AsSpan();
-
-        var arrayMesh = new ArrayMesh();
-        arrayMesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, planeArrays);
-        chunkMesh.Mesh = arrayMesh;
     }
 
     private void RegenerateAllChunks()
@@ -709,33 +609,5 @@ public partial class TerrainController : Node3D
                 _treePlacer.GenerateForChunk(coord);
             }
         }
-    }
-
-    private Color GetBiomeColorWeights(BiomeType biome)
-    {
-        return biome switch
-        {
-            BiomeType.Ocean => _oceanColor,
-            BiomeType.Desert => _desertColor,
-            BiomeType.Savanna => _savannaColor,
-            BiomeType.Grassland => _grasslandColor,
-            BiomeType.Forest => _forestColor,
-            BiomeType.Jungle => _jungleColor,
-            BiomeType.Tundra => _tundraColor,
-            BiomeType.Mountain => _mountainColor,
-            _ => new Color(0.5f, 0.5f, 0.5f)
-        };
-    }
-
-    private Vector3 GetNormal(float worldX, float worldZ)
-    {
-        var epsilon = (float)_chunkSize / _resolution;
-        var normal = new Vector3(
-            (GetHeight(worldX + epsilon, worldZ) - GetHeight(worldX - epsilon, worldZ)) / (2.0f * epsilon),
-            1.0f,
-            (GetHeight(worldX, worldZ + epsilon) - GetHeight(worldX, worldZ - epsilon)) / (2.0f * epsilon)
-        );
-
-        return normal.Normalized();
     }
 }

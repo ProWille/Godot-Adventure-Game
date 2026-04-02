@@ -10,30 +10,26 @@
 [ext_resource type="Texture2D" uid="uid://clf3b6b0d2mih" path="res://assets/FantasyFree/Separate_assets_glb/fir_001_Texture_1.png" id="7_o6xl0"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_jyhfs"]
+frequency = 0.0078
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_tbgi4"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_tefeu"]
-frequency = 0.0029
+frequency = 0.003
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_tbgi4"]
 render_priority = 0
 shader = ExtResource("1_sugp2")
 shader_parameter/texture_scale = 10.0
 shader_parameter/use_textures = false
-shader_parameter/water_blue_threshold = 0.7
-shader_parameter/water_red_limit = 0.4
-shader_parameter/water_green_limit = 0.4
-shader_parameter/sand_red_threshold = 0.8
-shader_parameter/sand_green_limit = 0.4
-shader_parameter/forest_blue_threshold = 0.6
-shader_parameter/forest_green_min = 0.3
-shader_parameter/grass_green_threshold = 0.6
-shader_parameter/grass_blue_limit = 0.4
-shader_parameter/snow_red_threshold = 0.5
-shader_parameter/snow_blue_threshold = 0.5
-shader_parameter/rock_red_threshold = 0.5
-shader_parameter/rock_green_threshold = 0.5
+shader_parameter/ocean_color = Color(0, 0.2, 0.8, 1)
+shader_parameter/grassland_color = Color(0.4, 0.8, 0.2, 1)
+shader_parameter/forest_color = Color(0.15, 0.45, 0.1, 1)
+shader_parameter/jungle_color = Color(0.1, 0.5, 0.1, 1)
+shader_parameter/desert_color = Color(0.9, 0.8, 0.5, 1)
+shader_parameter/savanna_color = Color(0.8, 0.7, 0.4, 1)
+shader_parameter/tundra_color = Color(0.8, 0.9, 1, 1)
+shader_parameter/mountain_color = Color(0.7, 0.7, 0.8, 1)
 
 [sub_resource type="Curve" id="Curve_o6xl0"]
 
@@ -99,6 +95,7 @@ TemperatureNoise = SubResource("FastNoiseLite_tbgi4")
 HeightNoise = SubResource("FastNoiseLite_tefeu")
 ChunkTemplate = NodePath("TerrainTemplate")
 RenderDistance = 8
+MountainHeightThreshold = 0.65
 PlayerOffset = 1.0
 GrassTemplate = NodePath("GrassTemplate")
 TreeTemplate = NodePath("TreeTemplate2")
