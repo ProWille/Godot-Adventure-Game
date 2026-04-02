@@ -67,23 +67,24 @@ public partial class PlayerController : CharacterBody3D
         newVelocity.X = direction.X * _speed;
         newVelocity.Z = direction.Z * _speed;
 
-        if (!IsInstanceValid(_terrainController))
-        {
-            Velocity = newVelocity;
-            MoveAndSlide();
-            return;
-        }
+        newVelocity.Y = IsInstanceValid(_terrainController) ? MoveAndSlideOnTerrain(delta, newVelocity.Y) : MoveAndSlideOnFloor(delta, newVelocity.Y);
 
+        Velocity = newVelocity;
+        MoveAndSlide();
+    }
+
+    private float MoveAndSlideOnTerrain(double delta, float velocityY)
+    {
         float terrainY = _terrainController.GetHeight(Position.X, Position.Z) + _terrainController.PlayerOffset;
 
         if (_isJumping)
         {
-            newVelocity.Y -= _fallAcceleration * (float)delta;
+            velocityY -= _fallAcceleration * (float)delta;
 
             if (Position.Y <= terrainY)
             {
                 Position = new Vector3(Position.X, terrainY, Position.Z);
-                newVelocity.Y = 0;
+                velocityY = 0;
                 _isJumping = false;
             }
         }
@@ -91,7 +92,7 @@ public partial class PlayerController : CharacterBody3D
         {
             if (Input.IsActionJustPressed("jump"))
             {
-                newVelocity.Y = _jumpImpulse;
+                velocityY = _jumpImpulse;
                 _isJumping = true;
             }
             else
@@ -100,8 +101,22 @@ public partial class PlayerController : CharacterBody3D
             }
         }
 
-        Velocity = newVelocity;
-        MoveAndSlide();
+        return velocityY;
+    }
+
+    private float MoveAndSlideOnFloor(double delta, float velocityY)
+    {
+        if (!IsOnFloor())
+        {
+            velocityY -= _fallAcceleration * (float)delta;
+        }
+
+        if (IsOnFloor() && Input.IsActionJustPressed("jump"))
+        {
+            velocityY = _jumpImpulse;
+        }
+
+        return velocityY;
     }
 
     private Vector3 GetDirection()

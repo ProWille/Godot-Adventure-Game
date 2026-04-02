@@ -4,7 +4,9 @@
 [ext_resource type="PackedScene" uid="uid://xth1go5lw1eu" path="res://scenes/sky.tscn" id="1_tipki"]
 [ext_resource type="Script" uid="uid://cawkxwq67rs1v" path="res://scripts/TerrainController.cs" id="2_jyhfs"]
 [ext_resource type="Material" uid="uid://el5y10hnh13g" path="res://addons/terrain_3d/extras/particle_example/process_material.tres" id="3_jyhfs"]
+[ext_resource type="Texture2D" uid="uid://ddprscrpsofah" path="res://demo/assets/textures/ground037_alb_ht.png" id="4_85g3d"]
 [ext_resource type="Material" uid="uid://ljo1wt61kbkq" path="res://addons/terrain_3d/extras/particle_example/grass_material.tres" id="4_tbgi4"]
+[ext_resource type="Texture2D" uid="uid://c88j3oj0lf6om" path="res://demo/assets/textures/rock023_alb_ht.png" id="5_choun"]
 [ext_resource type="PackedScene" uid="uid://byfa1tjtd5hfw" path="res://scenes/camera.tscn" id="5_tbgi4"]
 [ext_resource type="Script" uid="uid://k11yvnkcl7to" path="res://scripts/PositionDisplay.cs" id="6_tefeu"]
 [ext_resource type="Texture2D" uid="uid://clf3b6b0d2mih" path="res://assets/FantasyFree/Separate_assets_glb/fir_001_Texture_1.png" id="7_o6xl0"]
@@ -15,11 +17,13 @@ frequency = 0.0078
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_tbgi4"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_tefeu"]
-frequency = 0.003
+frequency = 0.002
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_tbgi4"]
 render_priority = 0
 shader = ExtResource("1_sugp2")
+shader_parameter/grass_texture = ExtResource("4_85g3d")
+shader_parameter/rock_texture = ExtResource("5_choun")
 shader_parameter/texture_scale = 10.0
 shader_parameter/use_textures = false
 shader_parameter/ocean_color = Color(0, 0.2, 0.8, 1)
@@ -30,6 +34,8 @@ shader_parameter/desert_color = Color(0.9, 0.8, 0.5, 1)
 shader_parameter/savanna_color = Color(0.8, 0.7, 0.4, 1)
 shader_parameter/tundra_color = Color(0.8, 0.9, 1, 1)
 shader_parameter/mountain_color = Color(0.7, 0.7, 0.8, 1)
+shader_parameter/sand_color = Color(0.9, 0.76, 0.5, 1)
+shader_parameter/snow_color = Color(0.9, 0.92, 0.95, 1)
 
 [sub_resource type="Curve" id="Curve_o6xl0"]
 
@@ -94,8 +100,9 @@ MoistureNoise = SubResource("FastNoiseLite_jyhfs")
 TemperatureNoise = SubResource("FastNoiseLite_tbgi4")
 HeightNoise = SubResource("FastNoiseLite_tefeu")
 ChunkTemplate = NodePath("TerrainTemplate")
+Height = 96.0
 RenderDistance = 8
-MountainHeightThreshold = 0.65
+_blendEdgeWidth = 0.3
 PlayerOffset = 1.0
 GrassTemplate = NodePath("GrassTemplate")
 TreeTemplate = NodePath("TreeTemplate2")

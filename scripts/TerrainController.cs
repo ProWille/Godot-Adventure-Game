@@ -14,12 +14,17 @@ public enum BiomeType
     Desert,
     Savanna,
     Tundra,
-    Mountain
+    Mountain,
+    Sand,
+    Snow
 }
 
 [Tool]
 public partial class TerrainController : Node3D
 {
+    public Vector2I CurrentChunkCoord => _currentChunkCoord;
+
+    [ExportGroup("Chunk Settings")]
     private FastNoiseLite _moistureNoise = new();
     [Export] public FastNoiseLite MoistureNoise
     {
@@ -79,7 +84,14 @@ public partial class TerrainController : Node3D
         set => _renderDistance = value;
     }
 
-    public Vector2I CurrentChunkCoord => _currentChunkCoord;
+    [ExportGroup("Biome Blend")]
+    [Export(PropertyHint.Range, "0.0, 0.5, 0.01, prefer_slider")]
+    private float _blendEdgeWidth = 0.1f;
+    public float BlendEdgeWidth
+    {
+        get => _blendEdgeWidth;
+        set => _blendEdgeWidth = value;
+    }
 
     [ExportGroup("Biome Thresholds")]
     private float _oceanHeightThreshold = 0.4f;
@@ -120,6 +132,14 @@ public partial class TerrainController : Node3D
     {
         get => _desertMoistureThreshold;
         set { _desertMoistureThreshold = Math.Clamp(value, 0.0f, 1.0f); RegenerateAllChunks(); }
+    }
+
+    private float _sandMoistureThreshold = 0.15f;
+    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
+    public float SandMoistureThreshold
+    {
+        get => _sandMoistureThreshold;
+        set { _sandMoistureThreshold = Math.Clamp(value, 0.0f, 1.0f); RegenerateAllChunks(); }
     }
 
     private float _grasslandMoistureThreshold = 0.3f;
@@ -390,19 +410,90 @@ public partial class TerrainController : Node3D
             return BiomeType.Ocean;
 
         if (height > _mountainHeightThreshold)
+        {
+            if (temperature < _tundraTemperatureThreshold)
+                return BiomeType.Snow;
             return BiomeType.Mountain;
+        }
 
         if (temperature < _tundraTemperatureThreshold)
             return BiomeType.Tundra;
 
         if (temperature > _desertTemperatureThreshold)
-            return moisture < _desertMoistureThreshold ? BiomeType.Desert : BiomeType.Savanna;
+        {
+            if (moisture < _sandMoistureThreshold)
+                return BiomeType.Sand;
+            if (moisture < _desertMoistureThreshold)
+                return BiomeType.Desert;
+            return BiomeType.Savanna;
+        }
 
         if (moisture < _grasslandMoistureThreshold)
             return BiomeType.Grassland;
         if (moisture < _forestMoistureThreshold)
             return BiomeType.Forest;
         return BiomeType.Jungle;
+    }
+
+    public (BiomeType primary, BiomeType secondary, float blendFactor) GetBiomeWithBlend(float moisture, float temperature, float height)
+    {
+        var biome = GetBiome(moisture, temperature, height);
+        var edge = _blendEdgeWidth;
+
+        if (height < _oceanHeightThreshold + edge)
+        {
+            if (height > _oceanHeightThreshold)
+                return (BiomeType.Grassland, BiomeType.Ocean, 1.0f - (height - _oceanHeightThreshold) / edge);
+            return (biome, biome, 0.0f);
+        }
+
+        if (height > _mountainHeightThreshold - edge && height < _mountainHeightThreshold + edge)
+        {
+            var dist = height - _mountainHeightThreshold;
+            var blendFactor = 1.0f - Math.Abs(dist) / edge;
+            if (temperature < _tundraTemperatureThreshold)
+                return (BiomeType.Snow, BiomeType.Mountain, blendFactor);
+            return (BiomeType.Mountain, BiomeType.Tundra, blendFactor);
+        }
+
+        if (temperature < _tundraTemperatureThreshold + edge && temperature > _tundraTemperatureThreshold - edge)
+        {
+            var dist = temperature - _tundraTemperatureThreshold;
+            var blendFactor = 1.0f - Math.Abs(dist) / edge;
+            return (BiomeType.Tundra, BiomeType.Forest, blendFactor);
+        }
+
+        if (temperature > _desertTemperatureThreshold - edge)
+        {
+            if (moisture < _sandMoistureThreshold + edge && moisture > _sandMoistureThreshold - edge)
+            {
+                var dist = moisture - _sandMoistureThreshold;
+                var blendFactor = 1.0f - Math.Abs(dist) / edge;
+                return (BiomeType.Sand, BiomeType.Desert, blendFactor);
+            }
+            if (moisture < _desertMoistureThreshold + edge && moisture > _desertMoistureThreshold - edge)
+            {
+                var dist = moisture - _desertMoistureThreshold;
+                var blendFactor = 1.0f - Math.Abs(dist) / edge;
+                return (BiomeType.Desert, BiomeType.Savanna, blendFactor);
+            }
+        }
+
+        if (moisture < _grasslandMoistureThreshold + edge && moisture > _grasslandMoistureThreshold - edge)
+        {
+            var dist = moisture - _grasslandMoistureThreshold;
+            var blendFactor = 1.0f - Math.Abs(dist) / edge;
+            return (BiomeType.Grassland, BiomeType.Forest, blendFactor);
+        }
+
+        if (moisture < _forestMoistureThreshold + edge && moisture > _forestMoistureThreshold - edge)
+        {
+            var dist = moisture - _forestMoistureThreshold;
+            var blendFactor = 1.0f - Math.Abs(dist) / edge;
+            return (BiomeType.Forest, BiomeType.Jungle, blendFactor);
+        }
+
+        return (biome, biome, 0.0f);
     }
 
     private void UpdateChunksForPosition(Vector3 position)
@@ -519,9 +610,9 @@ public partial class TerrainController : Node3D
             var normalizedHeight = (heightValue / _height + 1.0f) / 2.0f;
             var moisture = GetMoisture(worldX, worldZ);
             var temperature = GetTemperature(worldX, worldZ);
-            var biome = GetBiome(moisture, temperature, normalizedHeight);
 
-            colorArray[i] = new Color((float)biome / 8.0f, 0.0f, 0.0f, 1.0f);
+            var (primaryBiome, secondaryBiome, blendFactor) = GetBiomeWithBlend(moisture, temperature, normalizedHeight);
+            colorArray[i] = new Color((float)primaryBiome / 10.0f, blendFactor, (float)secondaryBiome / 10.0f, 1.0f);
 
             vertexArray[i] = vertex;
             normalArray[i] = normal;
