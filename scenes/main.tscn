@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" uid="uid://byfa1tjtd5hfw" path="res://scenes/camera.tscn" id="5_tbgi4"]
 [ext_resource type="Script" uid="uid://k11yvnkcl7to" path="res://scripts/PositionDisplay.cs" id="6_tefeu"]
 [ext_resource type="Texture2D" uid="uid://clf3b6b0d2mih" path="res://assets/FantasyFree/Separate_assets_glb/fir_001_Texture_1.png" id="7_o6xl0"]
+[ext_resource type="Shader" uid="uid://dk4dl823iwdrh" path="res://shaders/water.gdshader" id="9_ya4ey"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_jyhfs"]
 frequency = 0.0078
@@ -26,7 +27,7 @@ shader_parameter/grass_texture = ExtResource("4_85g3d")
 shader_parameter/rock_texture = ExtResource("5_choun")
 shader_parameter/texture_scale = 10.0
 shader_parameter/use_textures = false
-shader_parameter/ocean_color = Color(0, 0.2, 0.8, 1)
+shader_parameter/ocean_color = Color(0.42019397, 0.27493793, 4.813075e-08, 1)
 shader_parameter/grassland_color = Color(0.4, 0.8, 0.2, 1)
 shader_parameter/forest_color = Color(0.15, 0.45, 0.1, 1)
 shader_parameter/jungle_color = Color(0.1, 0.5, 0.1, 1)
@@ -88,13 +89,59 @@ _surfaces = [{
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_2vg78")
 
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_trceg"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_a8y0u"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_jkv2x"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_jbj1t"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_ya4ey"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_eb6dy"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_trceg"]
+render_priority = 0
+shader = ExtResource("9_ya4ey")
+shader_parameter/absorption_color = Color(0, 0.9882353, 1, 1)
+shader_parameter/absorption_multiplier = 1.0
+shader_parameter/air_ior = 1.0
+shader_parameter/water_ior = 1.33
+shader_parameter/scroll_speed_1 = Vector2(0.02, 0.1)
+shader_parameter/scroll_speed_2 = Vector2(0.1, 0.02)
+shader_parameter/scroll_mix = 0.5
+shader_parameter/texture_scale = Vector2(0.1, 0.1)
+shader_parameter/normal_map_1 = SubResource("NoiseTexture2D_ya4ey")
+shader_parameter/normal_map_2 = SubResource("NoiseTexture2D_eb6dy")
+shader_parameter/normal_strength = 1.0
+shader_parameter/height_map_1 = SubResource("NoiseTexture2D_jkv2x")
+shader_parameter/height_map_2 = SubResource("NoiseTexture2D_jbj1t")
+shader_parameter/height_strength = 0.12
+shader_parameter/edge_map_1 = SubResource("NoiseTexture2D_trceg")
+shader_parameter/edge_map_2 = SubResource("NoiseTexture2D_a8y0u")
+shader_parameter/refraction_mode = 1
+shader_parameter/simple_refraction_strength = 0.1
+shader_parameter/traced_refraction_distance = 50.0
+shader_parameter/traced_refraction_steps = 512
+shader_parameter/edge_distance = 0.1
+shader_parameter/fade_instead_of_foam = false
+shader_parameter/reflection_mode = 2
+shader_parameter/traced_reflection_distance = 50.0
+shader_parameter/traced_reflection_steps = 512
+shader_parameter/reflection_fade_distance = 0.05
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_water_chunk"]
+material = SubResource("ShaderMaterial_trceg")
+size = Vector2(64, 64)
+
 [sub_resource type="LabelSettings" id="LabelSettings_tipki"]
 
-[node name="Main" type="Node3D" unique_id=909135880]
+[node name="Main2" type="Node3D" unique_id=909135880]
 
 [node name="Sky" parent="." unique_id=184431804 instance=ExtResource("1_tipki")]
 
-[node name="TerrainController" type="Node3D" parent="." unique_id=1824529683 node_paths=PackedStringArray("ChunkTemplate", "GrassTemplate", "TreeTemplate")]
+[node name="TerrainController" type="Node3D" parent="." unique_id=1824529683 node_paths=PackedStringArray("ChunkTemplate", "WaterTemplate", "GrassTemplate", "TreeTemplate")]
 script = ExtResource("2_jyhfs")
 MoistureNoise = SubResource("FastNoiseLite_jyhfs")
 TemperatureNoise = SubResource("FastNoiseLite_tbgi4")
@@ -102,7 +149,8 @@ HeightNoise = SubResource("FastNoiseLite_tefeu")
 ChunkTemplate = NodePath("TerrainTemplate")
 Height = 96.0
 RenderDistance = 8
-_blendEdgeWidth = 0.3
+WaterTemplate = NodePath("WaterTemplate")
+MountainHeightThreshold = 0.8
 PlayerOffset = 1.0
 GrassTemplate = NodePath("GrassTemplate")
 TreeTemplate = NodePath("TreeTemplate2")
@@ -126,6 +174,10 @@ skeleton = NodePath("../..")
 visible = false
 mesh = SubResource("ArrayMesh_tipki")
 skeleton = NodePath("")
+
+[node name="WaterTemplate" type="MeshInstance3D" parent="TerrainController" unique_id=1367659543]
+visible = false
+mesh = SubResource("PlaneMesh_water_chunk")
 
 [node name="Player" parent="." unique_id=922425726 instance=ExtResource("5_tbgi4")]
 
