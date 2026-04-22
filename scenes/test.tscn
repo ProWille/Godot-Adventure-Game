@@ -2,8 +2,6 @@
 
 [ext_resource type="PackedScene" uid="uid://dus5mvg748wnc" path="res://scenes/player.tscn" id="2_0xm2m"]
 [ext_resource type="PackedScene" uid="uid://xth1go5lw1eu" path="res://scenes/sky.tscn" id="2_bl13t"]
-[ext_resource type="Shader" uid="uid://dk4dl823iwdrh" path="res://shaders/water.gdshader" id="3_iyx0m"]
-[ext_resource type="Shader" uid="uid://d3tukcxyjiktk" path="res://shaders/water2.gdshader" id="4_74lek"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_7dm0k"]
 size = Vector3(100, 2, 100)
@@ -14,73 +12,6 @@ albedo_color = Color(0.30588236, 0.30588236, 0.30588236, 1)
 [sub_resource type="BoxMesh" id="BoxMesh_7dm0k"]
 material = SubResource("StandardMaterial3D_74lek")
 size = Vector3(100, 2, 100)
-
-[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_jcd4p"]
-
-[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_uacia"]
-
-[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_lpvoh"]
-
-[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_at5dv"]
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_eb6dy"]
-render_priority = 0
-shader = ExtResource("3_iyx0m")
-shader_parameter/absorption_color = Color(0, 0.9882353, 1, 1)
-shader_parameter/absorption_multiplier = 1.0
-shader_parameter/air_ior = 1.0
-shader_parameter/water_ior = 1.33
-shader_parameter/scroll_speed_1 = Vector2(0.2, 0.2)
-shader_parameter/scroll_speed_2 = Vector2(0.2, 0.2)
-shader_parameter/scroll_mix = 0.5000000074506
-shader_parameter/texture_scale = Vector2(1, 1)
-shader_parameter/normal_map_1 = SubResource("NoiseTexture2D_lpvoh")
-shader_parameter/normal_map_2 = SubResource("NoiseTexture2D_at5dv")
-shader_parameter/normal_strength = 1.0
-shader_parameter/height_map_1 = SubResource("NoiseTexture2D_jcd4p")
-shader_parameter/height_map_2 = SubResource("NoiseTexture2D_uacia")
-shader_parameter/height_strength = 1.01999997720096
-shader_parameter/refraction_mode = 1
-shader_parameter/simple_refraction_strength = 0.1
-shader_parameter/traced_refraction_distance = 50.0
-shader_parameter/traced_refraction_steps = 512
-shader_parameter/edge_distance = 0.1
-shader_parameter/fade_instead_of_foam = false
-shader_parameter/reflection_mode = 2
-shader_parameter/traced_reflection_distance = 50.0
-shader_parameter/traced_reflection_steps = 512
-shader_parameter/reflection_fade_distance = 0.05
-
-[sub_resource type="PlaneMesh" id="PlaneMesh_iyx0m"]
-material = SubResource("ShaderMaterial_eb6dy")
-
-[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_74lek"]
-
-[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_j5jx5"]
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_j5jx5"]
-render_priority = 0
-shader = ExtResource("4_74lek")
-shader_parameter/normal_map_1 = SubResource("NoiseTexture2D_74lek")
-shader_parameter/normal_map_2 = SubResource("NoiseTexture2D_j5jx5")
-shader_parameter/scroll_direction = Vector2(-0.2, 1)
-shader_parameter/scroll_speed = 2.0
-shader_parameter/noise_scale = 0.001
-shader_parameter/normal_strength = 1.0
-shader_parameter/alpha = 0.65
-shader_parameter/depth_scaler = 0.1
-shader_parameter/surface_color = Color(0, 0.5, 0.8, 1)
-shader_parameter/deep_color = Color(0, 0.1, 0.3, 1)
-shader_parameter/deep_color_offset = 0.0
-shader_parameter/fresnel_color = Color(0.5, 0.7, 0.9, 1)
-shader_parameter/edge_color = Color(1, 1, 1, 1)
-shader_parameter/edge_threshold = 0.1
-shader_parameter/edge_noise = SubResource("NoiseTexture2D_74lek")
-shader_parameter/edge_wind_scale = 1.0
-
-[sub_resource type="PlaneMesh" id="PlaneMesh_lpvoh"]
-material = SubResource("ShaderMaterial_j5jx5")
-size = Vector2(10, 10)
 
 [node name="Main" type="Node3D" unique_id=784614987]
 
@@ -97,11 +28,3 @@ mesh = SubResource("BoxMesh_7dm0k")
 
 [node name="Player" parent="." unique_id=1483300688 instance=ExtResource("2_0xm2m")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
-
-[node name="WaterTemplate" type="MeshInstance3D" parent="." unique_id=663033825]
-transform = Transform3D(10, 0, 0, 0, 0.005, 0, 0, 0, 10, -32, 1, 0)
-mesh = SubResource("PlaneMesh_iyx0m")
-
-[node name="WaterTemplate2" type="MeshInstance3D" parent="." unique_id=1788004919]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 1, -13)
-mesh = SubResource("PlaneMesh_lpvoh")

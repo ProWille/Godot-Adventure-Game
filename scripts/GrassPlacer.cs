@@ -5,18 +5,24 @@ using Godot;
 internal class GrassPlacer
 {
     private MeshInstance3D _template;
-    public MeshInstance3D Template => _template;
 
-    private int _grasslandDensity;
-    private int _forestDensity;
-    private int _jungleDensity;
-    private int _savannaDensity;
+    private readonly int _grasslandDensity;
+    private readonly int _forestDensity;
+    private readonly int _jungleDensity;
+    private readonly int _savannaDensity;
+
     private readonly float _minHeight;
     private readonly float _maxHeight;
     private readonly float _heightOffset;
     private readonly int _renderDistance;
 
+    private readonly float _gridSpacing;
+    private readonly float _densityThreshold;
+    private readonly float _placementFrequency;
+    private readonly float _variationFrequency;
+
     private readonly FastNoiseLite _placementNoise;
+    private readonly FastNoiseLite _variationNoise;
     private readonly Dictionary<Vector2I, MultiMeshInstance3D> _instances = [];
     private readonly TerrainController _terrain;
     private readonly Node3D _parent;
@@ -32,52 +38,41 @@ internal class GrassPlacer
         float minHeight,
         float maxHeight,
         float heightOffset,
-        int renderDistance)
+        int renderDistance,
+        float gridSpacing,
+        float densityThreshold,
+        float placementFrequency,
+        float variationFrequency)
     {
         _terrain = terrain;
         _parent = parent;
-        _grasslandDensity = Math.Clamp(grasslandDensity, 0, 500);
-        _forestDensity = Math.Clamp(forestDensity, 0, 500);
-        _jungleDensity = Math.Clamp(jungleDensity, 0, 500);
-        _savannaDensity = Math.Clamp(savannaDensity, 0, 500);
+        _grasslandDensity = grasslandDensity;
+        _forestDensity = forestDensity;
+        _jungleDensity = jungleDensity;
+        _savannaDensity = savannaDensity;
         _minHeight = minHeight;
         _maxHeight = maxHeight;
         _heightOffset = heightOffset;
         _renderDistance = renderDistance;
+        _gridSpacing = gridSpacing;
+        _densityThreshold = densityThreshold;
+        _placementFrequency = placementFrequency;
+        _variationFrequency = variationFrequency;
         _placementNoise = new FastNoiseLite
         {
             Seed = new Random().Next() * 1000,
-            Frequency = 0.05f
+            Frequency = _placementFrequency
+        };
+        _variationNoise = new FastNoiseLite
+        {
+            Seed = new Random().Next() * 1000,
+            Frequency = _variationFrequency
         };
     }
 
     public void SetTemplate(MeshInstance3D template)
     {
         _template = template;
-    }
-
-    public int GrasslandDensity
-    {
-        get => _grasslandDensity;
-        set => _grasslandDensity = Math.Clamp(value, 0, 500);
-    }
-
-    public int ForestDensity
-    {
-        get => _forestDensity;
-        set => _forestDensity = Math.Clamp(value, 0, 500);
-    }
-
-    public int JungleDensity
-    {
-        get => _jungleDensity;
-        set => _jungleDensity = Math.Clamp(value, 0, 500);
-    }
-
-    public int SavannaDensity
-    {
-        get => _savannaDensity;
-        set => _savannaDensity = Math.Clamp(value, 0, 500);
     }
 
     public void GenerateForChunk(Vector2I coord)
@@ -90,36 +85,25 @@ internal class GrassPlacer
             Math.Abs(coord.Y - playerChunk.Y) > _renderDistance)
             return;
 
-        var (positions, biomes) = GetChunkVertexData(coord);
-        if (positions.Count == 0)
+        var (positions, rotationScales) = GetChunkVertexData(coord);
+        if (positions.Count == 0 || rotationScales.Count == 0)
             return;
-
-        var validPositions = FilterPositionsByBiome(positions, biomes);
-        if (validPositions.Count == 0)
-            return;
-
-        var instanceCount = Math.Min(validPositions.Count, GetBiomeDensity(coord) + _placementNoise.GetNoise2D(coord.X * 100, coord.Y * 100) * 20);
-        instanceCount = Math.Max(0, instanceCount);
-
-        var sampledPositions = SampleRandomPositions(validPositions, (int)instanceCount);
 
         var multiMesh = new MultiMesh
         {
             TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
-            InstanceCount = sampledPositions.Count
+            InstanceCount = positions.Count
         };
 
-        if (_template != null)
+        if (_template.Mesh != null)
         {
             multiMesh.Mesh = _template.Mesh;
         }
 
-        var random = new Random(coord.X * 10000 + coord.Y);
-        for (int i = 0; i < sampledPositions.Count; i++)
+        for (int i = 0; i < positions.Count; i++)
         {
-            var rotation = (float)(random.NextDouble() * Math.PI * 2);
-            var scale = (float)(random.NextDouble() * (_maxHeight - _minHeight) + _minHeight);
-            var pos = sampledPositions[i] + Vector3.Up * _heightOffset;
+            var (rotation, scale) = rotationScales[i];
+            var pos = positions[i];
 
             var transform = Transform3D.Identity
                 .Rotated(Vector3.Up, rotation)
@@ -188,21 +172,20 @@ internal class GrassPlacer
         }
     }
 
-    private (List<Vector3> positions, List<BiomeType> biomes) GetChunkVertexData(Vector2I coord)
+    private (List<Vector3> positions, List<(float, float)> rotationScales) GetChunkVertexData(Vector2I coord)
     {
-        var positions = new List<Vector3>();
-        var biomes = new List<BiomeType>();
-
         var chunkSize = _terrain.ChunkSize;
-        var resolution = _terrain.Resolution;
         var offsetX = coord.X * chunkSize;
         var offsetZ = coord.Y * chunkSize;
 
-        var step = chunkSize / (float)(resolution + 1);
+        var positions = new List<Vector3>();
+        var rotationScales = new List<(float rotation, float scale)>();
 
-        for (float x = 0; x <= chunkSize; x += step)
+        var biomeDensity = GetBiomeDensity(coord);
+
+        for (float x = 0; x <= chunkSize; x += _gridSpacing)
         {
-            for (float z = 0; z <= chunkSize; z += step)
+            for (float z = 0; z <= chunkSize; z += _gridSpacing)
             {
                 var worldX = offsetX + x;
                 var worldZ = offsetZ + z;
@@ -213,30 +196,43 @@ internal class GrassPlacer
                 var temperature = (_terrain.TemperatureNoise.GetNoise2D(worldX, worldZ) + 1.0f) / 2.0f;
 
                 var biome = _terrain.GetBiome(moisture, temperature, normalizedHeight);
+                if (!IsValidGrassBiome(biome))
+                    continue;
 
-                positions.Add(new Vector3(worldX, height, worldZ));
-                biomes.Add(biome);
+                var noiseValue = _placementNoise.GetNoise2D(worldX, worldZ);
+                var densityFactor = biome switch
+                {
+                    BiomeType.Jungle => _jungleDensity,
+                    BiomeType.Forest => _forestDensity,
+                    BiomeType.Savanna => _savannaDensity,
+                    _ => _grasslandDensity
+                };
+
+                if (biomeDensity <= 0)
+                    continue;
+
+                var actualThreshold = (noiseValue + 1.0f) / 2.0f * _densityThreshold * (densityFactor / (float)biomeDensity);
+
+                if (noiseValue < actualThreshold * 2.0f - 1.0f)
+                    continue;
+
+                positions.Add(new Vector3(worldX, height + _heightOffset, worldZ));
+
+                var variation = (float)_variationNoise.GetNoise2D(worldX, worldZ);
+                var rotation = (float)(variation * Math.PI * 2);
+                var scaleMultiplier = (variation + 1) * 0.5f;
+                var scaleVar = _minHeight + (_maxHeight - _minHeight) * scaleMultiplier;
+                rotationScales.Add((rotation, scaleVar));
             }
         }
 
-        return (positions, biomes);
+        return (positions, rotationScales);
     }
 
-    private List<Vector3> FilterPositionsByBiome(List<Vector3> positions, List<BiomeType> biomes)
+    private bool IsValidGrassBiome(BiomeType biome)
     {
-        var valid = new List<Vector3>();
-
-        for (int i = 0; i < positions.Count; i++)
-        {
-            var biome = biomes[i];
-            if (biome == BiomeType.Grassland || biome == BiomeType.Forest ||
-                biome == BiomeType.Jungle || biome == BiomeType.Savanna)
-            {
-                valid.Add(positions[i]);
-            }
-        }
-
-        return valid;
+        return biome == BiomeType.Grassland || biome == BiomeType.Forest ||
+               biome == BiomeType.Jungle || biome == BiomeType.Savanna;
     }
 
     private int GetBiomeDensity(Vector2I coord)
@@ -259,28 +255,5 @@ internal class GrassPlacer
             BiomeType.Grassland => _grasslandDensity,
             _ => 0
         };
-    }
-
-    private List<Vector3> SampleRandomPositions(List<Vector3> positions, int count)
-    {
-        if (positions.Count <= count)
-            return [.. positions];
-
-        var random = new Random();
-        var sampled = new HashSet<int>();
-
-        while (sampled.Count < count)
-        {
-            var index = random.Next(positions.Count);
-            sampled.Add(index);
-        }
-
-        var result = new List<Vector3>();
-        foreach (var index in sampled)
-        {
-            result.Add(positions[index]);
-        }
-
-        return result;
     }
 }

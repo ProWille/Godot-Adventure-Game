@@ -233,6 +233,38 @@ public partial class TerrainController : Node3D
         set => _grassHeightOffset = value;
     }
 
+    private float _grassGridSpacing = 1.0f;
+    [Export(PropertyHint.Range, "0.2f, 5.0f, 0.1f, prefer_slider")]
+    public float GrassGridSpacing
+    {
+        get => _grassGridSpacing;
+        set => _grassGridSpacing = value;
+    }
+
+    private float _grassDensityThreshold = 0.3f;
+    [Export(PropertyHint.Range, "0.0f, 1.0f, 0.05f, prefer_slider")]
+    public float GrassDensityThreshold
+    {
+        get => _grassDensityThreshold;
+        set => _grassDensityThreshold = value;
+    }
+
+    private float _grassPlacementFrequency = 0.8f;
+    [Export(PropertyHint.Range, "0.01f, 2.0f, 0.01f, prefer_slider")]
+    public float GrassPlacementFrequency
+    {
+        get => _grassPlacementFrequency;
+        set => _grassPlacementFrequency = value;
+    }
+
+    private float _grassVariationFrequency = 0.1f;
+    [Export(PropertyHint.Range, "0.01f, 2.0f, 0.01f, prefer_slider")]
+    public float GrassVariationFrequency
+    {
+        get => _grassVariationFrequency;
+        set => _grassVariationFrequency = value;
+    }
+
     [ExportGroup("Tree Settings")]
     private MeshInstance3D _treeTemplate;
     [Export] public MeshInstance3D TreeTemplate
@@ -313,6 +345,14 @@ public partial class TerrainController : Node3D
         set => _treeRandomSeedBase = value;
     }
 
+    private float _treePlacementFrequency = 0.03f;
+    [Export(PropertyHint.Range, "0.01f, 0.5f, 0.001f, prefer_slider")]
+    public float TreePlacementFrequency
+    {
+        get => _treePlacementFrequency;
+        set => _treePlacementFrequency = value;
+    }
+
     private readonly Dictionary<Vector2I, MeshInstance3D> _chunks = [];
     private readonly Dictionary<Vector2I, MeshInstance3D> _waterMeshes = [];
     private readonly object _chunkLock = new();
@@ -337,7 +377,11 @@ public partial class TerrainController : Node3D
             _minGrassHeight,
             _maxGrassHeight,
             _grassHeightOffset,
-            _renderDistance);
+            _renderDistance,
+            _grassGridSpacing,
+            _grassDensityThreshold,
+            _grassPlacementFrequency,
+            _grassVariationFrequency);
         _grassPlacer.SetTemplate(_grassTemplate);
 
         _treePlacer = new TreePlacer(
@@ -352,7 +396,8 @@ public partial class TerrainController : Node3D
             _renderDistance,
             _treeDensityNoiseScale,
             _treeDensityNoiseAmplitude,
-            _treeRandomSeedBase);
+            _treeRandomSeedBase,
+            _treePlacementFrequency);
         _treePlacer.SetTemplate(_treeTemplate);
 
         if (!Engine.IsEditorHint())

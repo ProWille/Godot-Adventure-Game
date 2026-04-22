@@ -5,18 +5,20 @@ using Godot;
 internal class TreePlacer
 {
     private MeshInstance3D _template;
-    public MeshInstance3D Template => _template;
 
-    private int _forestDensity;
-    private int _jungleDensity;
+    private readonly int _forestDensity;
+    private readonly int _jungleDensity;
+
     private readonly float _minHeightThreshold;
     private readonly float _maxHeightThreshold;
     private readonly float _minScale;
     private readonly float _maxScale;
     private readonly int _renderDistance;
+
     private readonly int _densityNoiseScale;
     private readonly int _densityNoiseAmplitude;
     private readonly int _randomSeedBase;
+    private readonly float _placementFrequency;
 
     private readonly FastNoiseLite _placementNoise;
     private readonly Dictionary<Vector2I, MultiMeshInstance3D> _instances = [];
@@ -36,42 +38,32 @@ internal class TreePlacer
         int renderDistance,
         int densityNoiseScale,
         int densityNoiseAmplitude,
-        int randomSeedBase)
+        int randomSeedBase,
+        float placementFrequency)
     {
         _terrain = terrain;
         _parent = parent;
-        _forestDensity = Math.Clamp(forestDensity, 0, 50);
-        _jungleDensity = Math.Clamp(jungleDensity, 0, 50);
+        _forestDensity = forestDensity;
+        _jungleDensity = jungleDensity;
         _minHeightThreshold = minHeightThreshold;
         _maxHeightThreshold = maxHeightThreshold;
         _minScale = minScale;
         _maxScale = maxScale;
         _renderDistance = renderDistance;
         _densityNoiseScale = densityNoiseScale;
-        _densityNoiseAmplitude = Math.Clamp(densityNoiseAmplitude, 0, 20);
+        _densityNoiseAmplitude = densityNoiseAmplitude;
         _randomSeedBase = randomSeedBase;
+        _placementFrequency = placementFrequency;
         _placementNoise = new FastNoiseLite
         {
             Seed = new Random().Next() * 1000,
-            Frequency = 0.03f
+            Frequency = _placementFrequency
         };
     }
 
     public void SetTemplate(MeshInstance3D template)
     {
         _template = template;
-    }
-
-    public int ForestDensity
-    {
-        get => _forestDensity;
-        set => _forestDensity = Math.Clamp(value, 0, 50);
-    }
-
-    public int JungleDensity
-    {
-        get => _jungleDensity;
-        set => _jungleDensity = Math.Clamp(value, 0, 50);
     }
 
     public void GenerateForChunk(Vector2I coord)

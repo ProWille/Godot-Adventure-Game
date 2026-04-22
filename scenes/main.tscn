@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" uid="uid://byfa1tjtd5hfw" path="res://scenes/camera.tscn" id="5_tbgi4"]
 [ext_resource type="Script" uid="uid://k11yvnkcl7to" path="res://scripts/PositionDisplay.cs" id="6_tefeu"]
 [ext_resource type="Texture2D" uid="uid://clf3b6b0d2mih" path="res://assets/FantasyFree/Separate_assets_glb/fir_001_Texture_1.png" id="7_o6xl0"]
+[ext_resource type="ArrayMesh" uid="uid://bv84lgt5uibvq" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Grass/GrassLumps/extracted/GrassLumpLargeHTall.GrassBladesH_007.mesh" id="8_eb6dy"]
 [ext_resource type="Shader" uid="uid://dk4dl823iwdrh" path="res://shaders/water.gdshader" id="9_ya4ey"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_jyhfs"]
@@ -137,7 +138,7 @@ size = Vector2(64, 64)
 
 [sub_resource type="LabelSettings" id="LabelSettings_tipki"]
 
-[node name="Main2" type="Node3D" unique_id=909135880]
+[node name="Main" type="Node3D" unique_id=909135880]
 
 [node name="Sky" parent="." unique_id=184431804 instance=ExtResource("1_tipki")]
 
@@ -152,7 +153,9 @@ RenderDistance = 8
 WaterTemplate = NodePath("WaterTemplate")
 MountainHeightThreshold = 0.8
 PlayerOffset = 1.0
-GrassTemplate = NodePath("GrassTemplate")
+GrassTemplate = NodePath("GrassTemplate2")
+GrassHeightOffset = 0.0
+GrassDensityThreshold = 0.6
 TreeTemplate = NodePath("TreeTemplate2")
 
 [node name="TerrainTemplate" type="MeshInstance3D" parent="TerrainController" unique_id=2117551585]
@@ -163,6 +166,11 @@ skeleton = NodePath("../..")
 visible = false
 material_override = ExtResource("3_jyhfs")
 mesh = SubResource("RibbonTrailMesh_jyhfs")
+skeleton = NodePath("../..")
+
+[node name="GrassTemplate2" type="MeshInstance3D" parent="TerrainController" unique_id=2043230620]
+visible = false
+mesh = ExtResource("8_eb6dy")
 skeleton = NodePath("../..")
 
 [node name="TreeTemplate" type="MeshInstance3D" parent="TerrainController" unique_id=1131737983]
