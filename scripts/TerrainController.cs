@@ -170,6 +170,27 @@ public partial class TerrainController : Node3D
     }
 
     [ExportGroup("Grass Settings")]
+    private bool _grassEnabled = true;
+    [Export] public bool GrassEnabled
+    {
+        get => _grassEnabled;
+        set
+        {
+            if (_grassEnabled == value)
+                return;
+            _grassEnabled = value;
+            if (_grassEnabled)
+            {
+                InitializeGrassPlacer();
+            }
+            else
+            {
+                _grassPlacer?.ClearAll();
+                _grassPlacer = null;
+            }
+        }
+    }
+
     private MeshInstance3D _grassTemplate;
     [Export] public MeshInstance3D GrassTemplate
     {
@@ -266,6 +287,27 @@ public partial class TerrainController : Node3D
     }
 
     [ExportGroup("Tree Settings")]
+    private bool _treesEnabled = true;
+    [Export] public bool TreesEnabled
+    {
+        get => _treesEnabled;
+        set
+        {
+            if (_treesEnabled == value)
+                return;
+            _treesEnabled = value;
+            if (_treesEnabled)
+            {
+                InitializeTreePlacer();
+            }
+            else
+            {
+                _treePlacer?.ClearAll();
+                _treePlacer = null;
+            }
+        }
+    }
+
     private MeshInstance3D _treeTemplate;
     [Export] public MeshInstance3D TreeTemplate
     {
@@ -362,11 +404,8 @@ public partial class TerrainController : Node3D
     private TreePlacer _treePlacer;
     private Node3D _player;
 
-    public override void _Ready()
+    private void InitializeGrassPlacer()
     {
-        _chunkContainer = new Node3D { Name = "ChunkContainer" };
-        AddChild(_chunkContainer);
-
         _grassPlacer = new GrassPlacer(
             this,
             this,
@@ -384,6 +423,14 @@ public partial class TerrainController : Node3D
             _grassVariationFrequency);
         _grassPlacer.SetTemplate(_grassTemplate);
 
+        foreach (var coord in _chunks.Keys)
+        {
+            _grassPlacer.GenerateForChunk(coord);
+        }
+    }
+
+    private void InitializeTreePlacer()
+    {
         _treePlacer = new TreePlacer(
             this,
             this,
@@ -399,6 +446,27 @@ public partial class TerrainController : Node3D
             _treeRandomSeedBase,
             _treePlacementFrequency);
         _treePlacer.SetTemplate(_treeTemplate);
+
+        foreach (var coord in _chunks.Keys)
+        {
+            _treePlacer.GenerateForChunk(coord);
+        }
+    }
+
+    public override void _Ready()
+    {
+        _chunkContainer = new Node3D { Name = "ChunkContainer" };
+        AddChild(_chunkContainer);
+
+        if (_grassEnabled)
+        {
+            InitializeGrassPlacer();
+        }
+
+        if (_treesEnabled)
+        {
+            InitializeTreePlacer();
+        }
 
         if (!Engine.IsEditorHint())
         {
