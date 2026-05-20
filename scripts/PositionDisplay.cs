@@ -1,5 +1,7 @@
 using Godot;
 
+namespace AdventureGame.Scripts;
+
 public partial class PositionDisplay : CanvasLayer
 {
     private Label _positionLabel;

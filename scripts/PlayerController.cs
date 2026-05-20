@@ -1,6 +1,8 @@
 using System;
 using Godot;
 
+namespace AdventureGame.Scripts;
+
 public partial class PlayerController : CharacterBody3D
 {
     private float _speed = 15.0f;

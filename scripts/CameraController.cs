@@ -1,6 +1,8 @@
 using System;
 using Godot;
 
+namespace AdventureGame.Scripts;
+
 public partial class CameraController : Camera3D
 {
     private float _speed = 5.0f;

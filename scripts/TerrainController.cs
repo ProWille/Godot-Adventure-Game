@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading;
 using Godot;
 
+namespace AdventureGame.Scripts;
+
 public enum BiomeType
 {
     Ocean,
@@ -19,7 +21,6 @@ public enum BiomeType
     Snow
 }
 
-[Tool]
 public partial class TerrainController : Node3D
 {
     public Vector2I CurrentChunkCoord => _currentChunkCoord;

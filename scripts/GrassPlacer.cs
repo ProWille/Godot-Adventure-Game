@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using Godot;
 
+namespace AdventureGame.Scripts;
+
 internal class GrassPlacer
 {
     private MeshInstance3D _template;
@@ -229,7 +231,7 @@ internal class GrassPlacer
         return (positions, rotationScales);
     }
 
-    private bool IsValidGrassBiome(BiomeType biome)
+    private static bool IsValidGrassBiome(BiomeType biome)
     {
         return biome == BiomeType.Grassland || biome == BiomeType.Forest ||
                biome == BiomeType.Jungle || biome == BiomeType.Savanna;

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using Godot;
 
+namespace AdventureGame.Scripts;
+
 internal class TreePlacer
 {
     private MeshInstance3D _template;
