@@ -521,6 +521,15 @@ public partial class TerrainController : Node3D
         return normal.Normalized();
     }
 
+    public BiomeType GetBiome(float worldX, float worldZ)
+    {
+        var moisture = GetMoisture(worldX, worldZ);
+        var temperature = GetTemperature(worldX, worldZ);
+        var height = GetHeight(worldX, worldZ);
+
+        return GetBiome(moisture, temperature, height);
+    }
+
     public BiomeType GetBiome(float moisture, float temperature, float height)
     {
         if (height < _oceanHeightThreshold)

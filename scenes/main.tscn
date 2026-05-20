@@ -8,10 +8,10 @@
 [ext_resource type="Material" uid="uid://ljo1wt61kbkq" path="res://addons/terrain_3d/extras/particle_example/grass_material.tres" id="4_tbgi4"]
 [ext_resource type="Texture2D" uid="uid://c88j3oj0lf6om" path="res://demo/assets/textures/rock023_alb_ht.png" id="5_choun"]
 [ext_resource type="PackedScene" uid="uid://byfa1tjtd5hfw" path="res://scenes/camera.tscn" id="5_tbgi4"]
-[ext_resource type="Script" uid="uid://k11yvnkcl7to" path="res://scripts/PositionDisplay.cs" id="6_tefeu"]
 [ext_resource type="Texture2D" uid="uid://clf3b6b0d2mih" path="res://assets/FantasyFree/Separate_assets_glb/fir_001_Texture_1.png" id="7_o6xl0"]
 [ext_resource type="ArrayMesh" uid="uid://bv84lgt5uibvq" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Grass/GrassLumps/extracted/GrassLumpLargeHTall.GrassBladesH_007.mesh" id="8_eb6dy"]
 [ext_resource type="Shader" uid="uid://dk4dl823iwdrh" path="res://shaders/water.gdshader" id="9_ya4ey"]
+[ext_resource type="Script" uid="uid://cqy0doqb1pwrd" path="res://scripts/DebugOverlay.cs" id="12_eb6dy"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_jyhfs"]
 frequency = 0.0078
@@ -189,10 +189,10 @@ mesh = SubResource("PlaneMesh_water_chunk")
 
 [node name="Player" parent="." unique_id=922425726 instance=ExtResource("5_tbgi4")]
 
-[node name="PositionDisplay" type="CanvasLayer" parent="." unique_id=481454780]
-script = ExtResource("6_tefeu")
+[node name="DebugOverlay" type="CanvasLayer" parent="." unique_id=481454780]
+script = ExtResource("12_eb6dy")
 
-[node name="PositionLabel" type="Label" parent="PositionDisplay" unique_id=270831581]
+[node name="DebugLabel" type="Label" parent="DebugOverlay" unique_id=270831581]
 offset_left = 10.0
 offset_top = 10.0
 offset_right = 210.0
