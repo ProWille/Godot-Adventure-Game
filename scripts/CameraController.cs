@@ -7,33 +7,19 @@ public partial class CameraController : Camera3D
 {
     private float _speed = 5.0f;
     [Export(PropertyHint.Range, "0.1f, 10.0f, 0.1f, prefer_slider")]
-    public float Speed
-    {
-        get => _speed;
-        set => _speed = Math.Clamp(value, 0.1f, 10.0f);
-    }
+    public float Speed { get => _speed; set => _speed = Math.Clamp(value, 0.1f, 10.0f); }
 
-    private float _sensitivity = 0.5f;
     [Export(PropertyHint.Range, "0.1f, 1.0f, 0.1f, prefer_slider")]
-    public float Sensitivity
-    {
-        get => _sensitivity;
-        set => _sensitivity = Math.Clamp(value, 0.1f, 1.0f);
-    }
+    public float Sensitivity { get; set; } = 0.5f;
 
-    private float _cameraAngleLimit = 60.0f;
     [Export(PropertyHint.Range, "0.0f, 90.0f, 0.1f, prefer_slider")]
-    public float CameraAngleLimit
-    {
-        get => _cameraAngleLimit;
-        set => _cameraAngleLimit = Math.Clamp(value, 0.0f, 90.0f);
-    }
+    public float CameraAngleLimit { get; set; } = 60.0f;
 
     public override void _Input(InputEvent @event)
     {
         if (@event is InputEventMouseMotion mouseMotion)
         {
-            Turn(mouseMotion.Relative.X * _sensitivity, mouseMotion.Relative.Y * _sensitivity);
+            Turn(mouseMotion.Relative.X * Sensitivity, mouseMotion.Relative.Y * Sensitivity);
         }
 
         if (@event is InputEventMouseButton mouseButton && mouseButton.Pressed)
@@ -63,7 +49,7 @@ public partial class CameraController : Camera3D
     public override void _Process(double delta)
     {
         var direction = GetDirection();
-        Position += direction * _speed;
+        Position += direction * Speed;
     }
 
     private Vector3 GetDirection()
@@ -95,7 +81,7 @@ public partial class CameraController : Camera3D
         RotateY(Mathf.DegToRad(-yaw));
 
         var cameraRotation = RotationDegrees;
-        cameraRotation.X = Mathf.Clamp(cameraRotation.X - pitch, -_cameraAngleLimit, _cameraAngleLimit);
+        cameraRotation.X = Mathf.Clamp(cameraRotation.X - pitch, -CameraAngleLimit, CameraAngleLimit);
         RotationDegrees = cameraRotation;
     }
 }

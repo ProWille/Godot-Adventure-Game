@@ -1,38 +1,15 @@
-using System;
 using Godot;
 
 namespace AdventureGame.Scripts;
 
 public partial class PlayerController : CharacterBody3D
 {
-    private float _speed = 15.0f;
-    [Export] public float Speed
-    {
-        get => _speed;
-        set => _speed = value;
-    }
+    [Export] public float Speed { get; set; } = 15.0f;
+    [Export] public float FallAcceleration { get; set; } = 50.0f;
+    [Export] public float JumpImpulse { get; set; } = 20.0f;
 
-    private float _fallAcceleration = 50.0f;
-    [Export] public float FallAcceleration
-    {
-        get => _fallAcceleration;
-        set => _fallAcceleration = value;
-    }
-
-    private float _jumpImpulse = 20.0f;
-    [Export] public float JumpImpulse
-    {
-        get => _jumpImpulse;
-        set => _jumpImpulse = value;
-    }
-
-    private float _cameraAngleLimit = 60.0f;
     [Export(PropertyHint.Range, "0.0f, 90.0f, 0.1f, prefer_slider")]
-    public float CameraAngleLimit
-    {
-        get => _cameraAngleLimit;
-        set => _cameraAngleLimit = Math.Clamp(value, 0.0f, 90.0f);
-    }
+    public float CameraAngleLimit { get; set; } = 60.0f;
 
     private TerrainController _terrainController;
     private Camera3D _camera;
@@ -66,8 +43,8 @@ public partial class PlayerController : CharacterBody3D
         Vector3 direction = GetDirection();
 
         var newVelocity = Velocity;
-        newVelocity.X = direction.X * _speed;
-        newVelocity.Z = direction.Z * _speed;
+        newVelocity.X = direction.X * Speed;
+        newVelocity.Z = direction.Z * Speed;
 
         newVelocity.Y = IsInstanceValid(_terrainController) ? MoveAndSlideOnTerrain(delta, newVelocity.Y) : MoveAndSlideOnFloor(delta, newVelocity.Y);
 
@@ -81,7 +58,7 @@ public partial class PlayerController : CharacterBody3D
 
         if (_isJumping)
         {
-            velocityY -= _fallAcceleration * (float)delta;
+            velocityY -= FallAcceleration * (float)delta;
 
             if (Position.Y <= terrainY)
             {
@@ -94,7 +71,7 @@ public partial class PlayerController : CharacterBody3D
         {
             if (Input.IsActionJustPressed("jump"))
             {
-                velocityY = _jumpImpulse;
+                velocityY = JumpImpulse;
                 _isJumping = true;
             }
             else
@@ -110,12 +87,12 @@ public partial class PlayerController : CharacterBody3D
     {
         if (!IsOnFloor())
         {
-            velocityY -= _fallAcceleration * (float)delta;
+            velocityY -= FallAcceleration * (float)delta;
         }
 
         if (IsOnFloor() && Input.IsActionJustPressed("jump"))
         {
-            velocityY = _jumpImpulse;
+            velocityY = JumpImpulse;
         }
 
         return velocityY;
@@ -148,7 +125,7 @@ public partial class PlayerController : CharacterBody3D
             return;
 
         var cameraRotation = _camera.RotationDegrees;
-        cameraRotation.X = Mathf.Clamp(cameraRotation.X - pitch, -_cameraAngleLimit, _cameraAngleLimit);
+        cameraRotation.X = Mathf.Clamp(cameraRotation.X - pitch, -CameraAngleLimit, CameraAngleLimit);
         _camera.RotationDegrees = cameraRotation;
     }
 }
