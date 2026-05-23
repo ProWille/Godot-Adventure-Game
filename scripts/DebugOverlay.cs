@@ -1,6 +1,6 @@
 using Godot;
 
-namespace AdventureGame.Scripts;
+namespace AdventureGame;
 
 public partial class DebugOverlay : CanvasLayer
 {

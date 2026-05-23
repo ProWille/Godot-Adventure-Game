@@ -1,6 +1,6 @@
 using Godot;
 
-namespace AdventureGame.Scripts;
+namespace AdventureGame;
 
 public partial class PlayerController : CharacterBody3D
 {
@@ -30,17 +30,33 @@ public partial class PlayerController : CharacterBody3D
         }
     }
 
-    public override void _Input(InputEvent @event)
+    public override void _UnhandledInput(InputEvent @event)
     {
-        if (@event is InputEventMouseMotion mouseMotion)
+        if (@event is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
         {
+            Input.MouseMode = Input.MouseModeEnum.Captured;
+            return;
+        }
+
+        if (Input.MouseMode != Input.MouseModeEnum.Captured)
+            return;
+
+        if (@event is InputEventMouseMotion mouseMotion)
             Turn(mouseMotion.Relative.X, mouseMotion.Relative.Y);
+
+        if (@event is InputEventKey key && key.Pressed)
+        {
+            if (key.Keycode == Key.Escape)
+                Input.MouseMode = Input.MouseModeEnum.Visible;
         }
     }
 
     public override void _PhysicsProcess(double delta)
     {
-        Vector3 direction = GetDirection();
+        if (Input.MouseMode != Input.MouseModeEnum.Captured)
+            return;
+
+        var direction = GetDirection();
 
         var newVelocity = Velocity;
         newVelocity.X = direction.X * Speed;

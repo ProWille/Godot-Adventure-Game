@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Godot;
 
-namespace AdventureGame.Scripts;
+namespace AdventureGame;
 
 public partial class TreePlacer : Resource
 {

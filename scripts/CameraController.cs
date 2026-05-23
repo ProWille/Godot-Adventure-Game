@@ -1,7 +1,7 @@
 using System;
 using Godot;
 
-namespace AdventureGame.Scripts;
+namespace AdventureGame;
 
 public partial class CameraController : Camera3D
 {
@@ -15,39 +15,44 @@ public partial class CameraController : Camera3D
     [Export(PropertyHint.Range, "0.0f, 90.0f, 0.1f, prefer_slider")]
     public float CameraAngleLimit { get; set; } = 60.0f;
 
-    public override void _Input(InputEvent @event)
+    public override void _UnhandledInput(InputEvent @event)
     {
+        if (@event is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
+        {
+            Input.MouseMode = Input.MouseModeEnum.Captured;
+            return;
+        }
+
+        if (Input.MouseMode != Input.MouseModeEnum.Captured)
+            return;
+
+        if (@event is InputEventMouseButton mouseButton)
+        {
+            if (mouseButton.ButtonIndex == MouseButton.WheelUp)
+                Speed += 0.1f;
+
+            else if (mouseButton.ButtonIndex == MouseButton.WheelDown)
+                Speed -= 0.1f;
+        }
+
         if (@event is InputEventMouseMotion mouseMotion)
-        {
             Turn(mouseMotion.Relative.X * Sensitivity, mouseMotion.Relative.Y * Sensitivity);
-        }
 
-        if (@event is InputEventMouseButton mouseButton && mouseButton.Pressed)
+        if (@event is InputEventKey key && key.Pressed)
         {
-            switch (mouseButton.ButtonIndex)
-            {
-                case MouseButton.WheelUp:
-                    Speed += 0.1f;
-                    return;
-                case MouseButton.WheelDown:
-                    Speed -= 0.1f;
-                    return;
-                default:
-                    return;
-            }
-        }
-
-        if (@event is InputEventKey keyEvent && keyEvent.Pressed && !keyEvent.Echo)
-        {
-            if (keyEvent.Keycode == Key.Space)
-            {
+            if (key.Keycode == Key.Space)
                 GetTree().ReloadCurrentScene();
-            }
+
+            else if (key.Keycode == Key.Escape)
+                Input.MouseMode = Input.MouseModeEnum.Visible;
         }
     }
 
     public override void _Process(double delta)
     {
+        if (Input.MouseMode != Input.MouseModeEnum.Captured)
+            return;
+
         var direction = GetDirection();
         Position += direction * Speed;
     }

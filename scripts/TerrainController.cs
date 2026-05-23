@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading;
 using Godot;
 
-namespace AdventureGame.Scripts;
+namespace AdventureGame;
 
 public enum BiomeType
 {
@@ -39,11 +39,10 @@ public partial class TerrainController : Node3D
     public float Height { get; set; } = 64.0f;
     [Export(PropertyHint.Range, "1, 24, 1, prefer_slider")]
     public int RenderDistance { get; set; } = 4;
-
-    [ExportGroup("Biome Blend")]
-
     [Export(PropertyHint.Range, "0.0, 0.5, 0.01, prefer_slider")]
-    public float BlendEdgeWidth { get; set; } = 0.1f;
+    public float BiomeBlendWidth { get; set; } = 0.1f;
+    [Export(PropertyHint.Range, "0, 10, 0.1, prefer_slider")]
+    public float PlayerOffset { get; set; } = 0.0f;
 
     [ExportGroup("Biome Thresholds")]
 
@@ -63,11 +62,6 @@ public partial class TerrainController : Node3D
     public float GrasslandMoistureThreshold { get; set; } = 0.3f;
     [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
     public float ForestMoistureThreshold { get; set; } = 0.6f;
-
-    [ExportGroup("Player Settings")]
-
-    [Export(PropertyHint.Range, "0, 10, 0.1, prefer_slider")]
-    public float PlayerOffset { get; set; } = 0.0f;
 
     [ExportGroup("Decoration Settings")]
 
@@ -222,7 +216,7 @@ public partial class TerrainController : Node3D
     public (BiomeType primary, BiomeType secondary, float blendFactor) GetBiomeWithBlend(float moisture, float temperature, float height)
     {
         var biome = GetBiome(moisture, temperature, height);
-        var edge = BlendEdgeWidth;
+        var edge = BiomeBlendWidth;
 
         if (height < OceanHeightThreshold + edge)
         {
