@@ -4,78 +4,53 @@ using Godot;
 
 namespace AdventureGame.Scripts;
 
-internal class TreePlacer
+public partial class TreePlacer : Resource
 {
-    private MeshInstance3D _template;
+    [Export(PropertyHint.Range, "0, 50, 1, prefer_slider")]
+    public int ForestDensity { get; set; } = 10; 
+    [Export(PropertyHint.Range, "0, 50, 1, prefer_slider")]
+    public int JungleDensity { get; set; } = 20;
+    [Export(PropertyHint.Range, "0.0f, 1.0f, 0.05f, prefer_slider")]
+    public float MinHeightThreshold { get; set; } = 0.35f;
+    [Export(PropertyHint.Range, "0.0f, 1.0f, 0.05f, prefer_slider")]
+    public float MaxHeightThreshold { get; set; } = 0.65f;
+    [Export(PropertyHint.Range, "0.5f, 3.0f, 0.1f, prefer_slider")]
+    public float MinScale { get; set; } = 0.8f;
+    [Export(PropertyHint.Range, "0.5f, 3.0f, 0.1f, prefer_slider")]
+    public float MaxScale { get; set; } = 1.5f;
+    [Export(PropertyHint.Range, "1, 200, 1, prefer_slider")]
+    public int DensityNoiseScale { get; set; } = 50;
+    [Export(PropertyHint.Range, "0, 20, 1, prefer_slider")]
+    public int DensityNoiseAmplitude { get; set; } = 5;
+    [Export(PropertyHint.Range, "0, 100000, 1, prefer_slider")]
+    public int RandomSeedBase { get; set; } = 54321;
+    [Export(PropertyHint.Range, "0.01f, 0.5f, 0.001f, prefer_slider")]
+    public float PlacementFrequency { get; set; } = 0.03f;
 
-    private readonly int _forestDensity;
-    private readonly int _jungleDensity;
+    private TerrainController _terrain;
+    private FastNoiseLite _placementNoise;
 
-    private readonly float _minHeightThreshold;
-    private readonly float _maxHeightThreshold;
-    private readonly float _minScale;
-    private readonly float _maxScale;
-    private readonly int _renderDistance;
-
-    private readonly int _densityNoiseScale;
-    private readonly int _densityNoiseAmplitude;
-    private readonly int _randomSeedBase;
-    private readonly float _placementFrequency;
-
-    private readonly FastNoiseLite _placementNoise;
     private readonly Dictionary<Vector2I, MultiMeshInstance3D> _instances = [];
-    private readonly TerrainController _terrain;
-    private readonly Node3D _parent;
     private readonly object _lock = new();
 
-    public TreePlacer(
-        TerrainController terrain,
-        Node3D parent,
-        int forestDensity,
-        int jungleDensity,
-        float minHeightThreshold,
-        float maxHeightThreshold,
-        float minScale,
-        float maxScale,
-        int renderDistance,
-        int densityNoiseScale,
-        int densityNoiseAmplitude,
-        int randomSeedBase,
-        float placementFrequency)
+    public void Initialize(TerrainController terrain)
     {
         _terrain = terrain;
-        _parent = parent;
-        _forestDensity = forestDensity;
-        _jungleDensity = jungleDensity;
-        _minHeightThreshold = minHeightThreshold;
-        _maxHeightThreshold = maxHeightThreshold;
-        _minScale = minScale;
-        _maxScale = maxScale;
-        _renderDistance = renderDistance;
-        _densityNoiseScale = densityNoiseScale;
-        _densityNoiseAmplitude = densityNoiseAmplitude;
-        _randomSeedBase = randomSeedBase;
-        _placementFrequency = placementFrequency;
         _placementNoise = new FastNoiseLite
         {
             Seed = new Random().Next() * 1000,
-            Frequency = _placementFrequency
+            Frequency = PlacementFrequency
         };
-    }
-
-    public void SetTemplate(MeshInstance3D template)
-    {
-        _template = template;
     }
 
     public void GenerateForChunk(Vector2I coord)
     {
-        if (_template == null)
+        if (!IsInstanceValid(_terrain.TreeTemplate))
             return;
 
         var playerChunk = _terrain.CurrentChunkCoord;
-        if (Math.Abs(coord.X - playerChunk.X) > _renderDistance || 
-            Math.Abs(coord.Y - playerChunk.Y) > _renderDistance)
+        if (Math.Abs(coord.X - playerChunk.X) > _terrain.RenderDistance || 
+            Math.Abs(coord.Y - playerChunk.Y) > _terrain.RenderDistance)
             return;
 
         var chunkSize = _terrain.ChunkSize;
@@ -91,11 +66,11 @@ internal class TreePlacer
         if (biome != BiomeType.Forest && biome != BiomeType.Jungle)
             return;
 
-        if (normalizedCenterHeight < _minHeightThreshold || normalizedCenterHeight > _maxHeightThreshold)
+        if (normalizedCenterHeight < MinHeightThreshold || normalizedCenterHeight > MaxHeightThreshold)
             return;
 
-        var density = biome == BiomeType.Jungle ? _jungleDensity : _forestDensity;
-        var adjustedDensity = density + (int)(_placementNoise.GetNoise2D(coord.X * _densityNoiseScale, coord.Y * _densityNoiseScale) * _densityNoiseAmplitude);
+        var density = biome == BiomeType.Jungle ? JungleDensity : ForestDensity;
+        var adjustedDensity = density + (int)(_placementNoise.GetNoise2D(coord.X * DensityNoiseScale, coord.Y * DensityNoiseScale) * DensityNoiseAmplitude);
         adjustedDensity = Math.Max(0, adjustedDensity);
 
         var positions = SamplePositions(coord, adjustedDensity);
@@ -105,19 +80,15 @@ internal class TreePlacer
         var multiMesh = new MultiMesh
         {
             TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
-            InstanceCount = positions.Count
+            InstanceCount = positions.Count,
+            Mesh = _terrain.TreeTemplate.Mesh
         };
 
-        if (_template != null)
-        {
-            multiMesh.Mesh = _template.Mesh;
-        }
-
-        var random = new Random(coord.X * 10000 + coord.Y + _randomSeedBase);
+        var random = new Random(coord.X * 10000 + coord.Y + RandomSeedBase);
         for (int i = 0; i < positions.Count; i++)
         {
             var rotation = (float)(random.NextDouble() * Math.PI * 2);
-            var scale = (float)(random.NextDouble() * (_maxScale - _minScale) + _minScale);
+            var scale = (float)(random.NextDouble() * (MaxScale - MinScale) + MinScale);
             var pos = positions[i];
 
             var transform = Transform3D.Identity
@@ -129,7 +100,7 @@ internal class TreePlacer
         }
 
         var chunkPos = _terrain.GetChunkCoord(coord.X, coord.Y);
-        var instance = new MultiMeshInstance3D
+        var newInstance = new MultiMeshInstance3D
         {
             Name = $"Trees_{chunkPos.X}_{chunkPos.Y}",
             Multimesh = multiMesh,
@@ -138,15 +109,15 @@ internal class TreePlacer
 
         lock (_lock)
         {
-            if (_instances.ContainsKey(coord))
+            if (_instances.TryGetValue(coord, out var instance))
             {
-                _instances[coord].QueueFree();
+                instance.QueueFree();
                 _instances.Remove(coord);
             }
-            _instances[coord] = instance;
+            _instances[coord] = newInstance;
         }
 
-        _parent.AddChild(instance);
+        _terrain.AddChild(newInstance);
     }
 
     public void RemoveForChunk(Vector2I coord)
@@ -207,7 +178,7 @@ internal class TreePlacer
                 var height = _terrain.GetHeight(worldX, worldZ);
                 var normalizedHeight = (height / _terrain.Height + 1.0f) / 2.0f;
 
-                if (normalizedHeight < _minHeightThreshold || normalizedHeight > _maxHeightThreshold)
+                if (normalizedHeight < MinHeightThreshold || normalizedHeight > MaxHeightThreshold)
                     continue;
 
                 var moisture = _terrain.GetMoisture(worldX, worldZ);

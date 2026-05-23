@@ -69,113 +69,46 @@ public partial class TerrainController : Node3D
     [Export(PropertyHint.Range, "0, 10, 0.1, prefer_slider")]
     public float PlayerOffset { get; set; } = 0.0f;
 
-    [ExportGroup("Grass Settings")]
+    [ExportGroup("Decoration Settings")]
 
-    [Export] public bool GrassEnabled { get; set; } = true;
+    [Export] public GrassPlacer GrassPlacer { get; set; }
     [Export] public MeshInstance3D GrassTemplate { get; set; }
-    [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
-    public int GrasslandDensity { get; set; } = 100;
-    [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
-    public int GrassForestDensity { get; set; } = 80;
-    [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
-    public int GrassJungleDensity { get; set; } = 120;
-    [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
-    public int GrassSavannaDensity { get; set; } = 60;
-    [Export(PropertyHint.Range, "0.1f, 2.0f, 0.1f, prefer_slider")]
-    public float MinGrassHeight { get; set; } = 0.5f;
-    [Export(PropertyHint.Range, "0.1f, 2.0f, 0.1f, prefer_slider")]
-    public float MaxGrassHeight { get; set; } = 1.5f;
-    [Export(PropertyHint.Range, "0.0f, 1.0f, 0.05f, prefer_slider")]
-    public float GrassHeightOffset { get; set; } = 0.3f;
-    [Export(PropertyHint.Range, "0.2f, 5.0f, 0.1f, prefer_slider")]
-    public float GrassGridSpacing { get; set; } = 1.0f;
-    [Export(PropertyHint.Range, "0.0f, 1.0f, 0.05f, prefer_slider")]
-    public float GrassDensityThreshold { get; set; } = 0.3f;
-    [Export(PropertyHint.Range, "0.01f, 2.0f, 0.01f, prefer_slider")]
-    public float GrassPlacementFrequency { get; set; } = 0.8f;
-    [Export(PropertyHint.Range, "0.01f, 2.0f, 0.01f, prefer_slider")]
-    public float GrassVariationFrequency { get; set; } = 0.1f;
-
-    [ExportGroup("Tree Settings")]
-
-    [Export] public bool TreesEnabled { get; set; } = true;
+    [Export] public bool GrassEnabled { get; set; } = true;
+    [Export] public TreePlacer TreePlacer { get; set; }
     [Export] public MeshInstance3D TreeTemplate { get; set; }
-    [Export(PropertyHint.Range, "0, 50, 1, prefer_slider")]
-    public int TreeForestDensity { get; set; } = 10;
-    [Export(PropertyHint.Range, "0, 50, 1, prefer_slider")]
-    public int TreeJungleDensity { get; set; } = 20;
-    [Export(PropertyHint.Range, "0.0f, 1.0f, 0.05f, prefer_slider")]
-    public float TreeMinHeightThreshold { get; set; } = 0.35f;
-    [Export(PropertyHint.Range, "0.0f, 1.0f, 0.05f, prefer_slider")]
-    public float TreeMaxHeightThreshold { get; set; } = 0.65f;
-    [Export(PropertyHint.Range, "0.5f, 3.0f, 0.1f, prefer_slider")]
-    public float TreeMinScale { get; set; } = 0.8f;
-    [Export(PropertyHint.Range, "0.5f, 3.0f, 0.1f, prefer_slider")]
-    public float TreeMaxScale { get; set; } = 1.5f;
-    [Export(PropertyHint.Range, "1, 200, 1, prefer_slider")]
-    public int TreeDensityNoiseScale { get; set; } = 50;
-    [Export(PropertyHint.Range, "0, 20, 1, prefer_slider")]
-    public int TreeDensityNoiseAmplitude { get; set; } = 5;
-    [Export(PropertyHint.Range, "0, 100000, 1, prefer_slider")]
-    public int TreeRandomSeedBase { get; set; } = 54321;
-    [Export(PropertyHint.Range, "0.01f, 0.5f, 0.001f, prefer_slider")]
-    public float TreePlacementFrequency { get; set; } = 0.03f;
+    [Export] public bool TreesEnabled { get; set; } = true;
+
+    private Node3D _chunkContainer;
+    private Vector2I _currentChunkCoord;
+    private Node3D _player;
 
     private readonly Dictionary<Vector2I, MeshInstance3D> _chunks = [];
     private readonly Dictionary<Vector2I, MeshInstance3D> _waterMeshes = [];
     private readonly object _chunkLock = new();
-    private Node3D _chunkContainer;
-    private Vector2I _currentChunkCoord;
-    private GrassPlacer _grassPlacer;
-    private TreePlacer _treePlacer;
-    private Node3D _player;
 
     private void InitializeGrassPlacer()
     {
-        _grassPlacer = new GrassPlacer(
-            this,
-            this,
-            GrasslandDensity,
-            GrassForestDensity,
-            GrassJungleDensity,
-            GrassSavannaDensity,
-            MinGrassHeight,
-            MaxGrassHeight,
-            GrassHeightOffset,
-            RenderDistance,
-            GrassGridSpacing,
-            GrassDensityThreshold,
-            GrassPlacementFrequency,
-            GrassVariationFrequency);
-        _grassPlacer.SetTemplate(GrassTemplate);
+        if (!IsInstanceValid(GrassPlacer))
+            return;
+
+        GrassPlacer.Initialize(this);
 
         foreach (var coord in _chunks.Keys)
         {
-            _grassPlacer.GenerateForChunk(coord);
+            GrassPlacer.GenerateForChunk(coord);
         }
     }
 
     private void InitializeTreePlacer()
     {
-        _treePlacer = new TreePlacer(
-            this,
-            this,
-            TreeForestDensity,
-            TreeJungleDensity,
-            TreeMinHeightThreshold,
-            TreeMaxHeightThreshold,
-            TreeMinScale,
-            TreeMaxScale,
-            RenderDistance,
-            TreeDensityNoiseScale,
-            TreeDensityNoiseAmplitude,
-            TreeRandomSeedBase,
-            TreePlacementFrequency);
-        _treePlacer.SetTemplate(TreeTemplate);
+        if (!IsInstanceValid(TreePlacer))
+            return;
+
+        TreePlacer.Initialize(this);
 
         foreach (var coord in _chunks.Keys)
         {
-            _treePlacer.GenerateForChunk(coord);
+            TreePlacer.GenerateForChunk(coord);
         }
     }
 
@@ -428,8 +361,11 @@ public partial class TerrainController : Node3D
             CreateWaterMesh(coord);
         }
 
-        _grassPlacer?.GenerateForChunk(coord);
-        _treePlacer?.GenerateForChunk(coord);
+        if (GrassEnabled && IsInstanceValid(GrassPlacer))
+            GrassPlacer.GenerateForChunk(coord);
+
+        if (TreesEnabled && IsInstanceValid(TreePlacer))
+            TreePlacer.GenerateForChunk(coord);
     }
 
     private void CreateWaterMesh(Vector2I coord)
@@ -521,8 +457,11 @@ public partial class TerrainController : Node3D
             _waterMeshes.Remove(coord);
         }
 
-        _grassPlacer?.RemoveForChunk(coord);
-        _treePlacer?.RemoveForChunk(coord);
+        if (GrassEnabled && IsInstanceValid(GrassPlacer))
+            GrassPlacer.RemoveForChunk(coord);
+
+        if (TreesEnabled && IsInstanceValid(TreePlacer))
+            TreePlacer.RemoveForChunk(coord);
     }
 
     private void RegenerateAllChunks()
@@ -578,21 +517,21 @@ public partial class TerrainController : Node3D
             }
         }
 
-        if (_grassPlacer != null)
+        if (GrassEnabled && IsInstanceValid(GrassPlacer))
         {
-            _grassPlacer.ClearAll();
+            GrassPlacer.ClearAll();
             foreach (var coord in _chunks.Keys)
             {
-                _grassPlacer.GenerateForChunk(coord);
+                GrassPlacer.GenerateForChunk(coord);
             }
         }
 
-        if (_treePlacer != null)
+        if (TreesEnabled && IsInstanceValid(TreePlacer))
         {
-            _treePlacer.ClearAll();
+            TreePlacer.ClearAll();
             foreach (var coord in _chunks.Keys)
             {
-                _treePlacer.GenerateForChunk(coord);
+                TreePlacer.GenerateForChunk(coord);
             }
         }
     }

@@ -3,9 +3,9 @@
 [ext_resource type="Shader" uid="uid://fvgd8s2ryqg8" path="res://shaders/terrain.gdshader" id="1_sugp2"]
 [ext_resource type="PackedScene" uid="uid://xth1go5lw1eu" path="res://scenes/sky.tscn" id="1_tipki"]
 [ext_resource type="Script" uid="uid://cawkxwq67rs1v" path="res://scripts/TerrainController.cs" id="2_jyhfs"]
-[ext_resource type="Material" uid="uid://el5y10hnh13g" path="res://addons/terrain_3d/extras/particle_example/process_material.tres" id="3_jyhfs"]
+[ext_resource type="Resource" uid="uid://ceepvn633kke6" path="res://scripts/Decorations/Grass/GrassGenerator.tres" id="3_eb6dy"]
+[ext_resource type="Resource" uid="uid://cya0kkp5j7ujm" path="res://scripts/Decorations/Tress/TreeGenerator.tres" id="3_trceg"]
 [ext_resource type="Texture2D" uid="uid://ddprscrpsofah" path="res://demo/assets/textures/ground037_alb_ht.png" id="4_85g3d"]
-[ext_resource type="Material" uid="uid://ljo1wt61kbkq" path="res://addons/terrain_3d/extras/particle_example/grass_material.tres" id="4_tbgi4"]
 [ext_resource type="Texture2D" uid="uid://c88j3oj0lf6om" path="res://demo/assets/textures/rock023_alb_ht.png" id="5_choun"]
 [ext_resource type="PackedScene" uid="uid://byfa1tjtd5hfw" path="res://scenes/camera.tscn" id="5_tbgi4"]
 [ext_resource type="Texture2D" uid="uid://clf3b6b0d2mih" path="res://assets/FantasyFree/Separate_assets_glb/fir_001_Texture_1.png" id="7_o6xl0"]
@@ -38,19 +38,6 @@ shader_parameter/tundra_color = Color(0.8, 0.9, 1, 1)
 shader_parameter/mountain_color = Color(0.7, 0.7, 0.8, 1)
 shader_parameter/sand_color = Color(0.9, 0.76, 0.5, 1)
 shader_parameter/snow_color = Color(0.9, 0.92, 0.95, 1)
-
-[sub_resource type="Curve" id="Curve_o6xl0"]
-
-[sub_resource type="RibbonTrailMesh" id="RibbonTrailMesh_jyhfs"]
-material = ExtResource("4_tbgi4")
-curve = SubResource("Curve_o6xl0")
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sugp2"]
-albedo_color = Color(1, 0, 1, 1)
-
-[sub_resource type="CapsuleMesh" id="CapsuleMesh_sugp2"]
-material = SubResource("StandardMaterial3D_sugp2")
-height = 5.0
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_g6u2l"]
 resource_name = "Material"
@@ -149,36 +136,24 @@ TemperatureNoise = SubResource("FastNoiseLite_tbgi4")
 HeightNoise = SubResource("FastNoiseLite_tefeu")
 ChunkTemplate = NodePath("TerrainTemplate")
 WaterTemplate = NodePath("WaterTemplate")
-RenderDistance = 8
 MountainHeightThreshold = 0.8
 PlayerOffset = 1.0
+GrassPlacer = ExtResource("3_eb6dy")
+GrassTemplate = NodePath("GrassTemplate")
 GrassEnabled = false
-GrassTemplate = NodePath("GrassTemplate2")
-GrassHeightOffset = 0.0
-GrassDensityThreshold = 0.6
-TreeTemplate = NodePath("TreeTemplate2")
+TreePlacer = ExtResource("3_trceg")
+TreeTemplate = NodePath("TreeTemplate")
 
 [node name="TerrainTemplate" type="MeshInstance3D" parent="TerrainController" unique_id=2117551585]
 material_override = SubResource("ShaderMaterial_tbgi4")
 skeleton = NodePath("../..")
 
-[node name="GrassTemplate" type="MeshInstance3D" parent="TerrainController" unique_id=66105596]
-visible = false
-material_override = ExtResource("3_jyhfs")
-mesh = SubResource("RibbonTrailMesh_jyhfs")
-skeleton = NodePath("../..")
-
-[node name="GrassTemplate2" type="MeshInstance3D" parent="TerrainController" unique_id=2043230620]
+[node name="GrassTemplate" type="MeshInstance3D" parent="TerrainController" unique_id=2043230620]
 visible = false
 mesh = ExtResource("8_eb6dy")
 skeleton = NodePath("../..")
 
-[node name="TreeTemplate" type="MeshInstance3D" parent="TerrainController" unique_id=1131737983]
-visible = false
-mesh = SubResource("CapsuleMesh_sugp2")
-skeleton = NodePath("../..")
-
-[node name="TreeTemplate2" type="MeshInstance3D" parent="TerrainController" unique_id=1508519750]
+[node name="TreeTemplate" type="MeshInstance3D" parent="TerrainController" unique_id=1508519750]
 visible = false
 mesh = SubResource("ArrayMesh_tipki")
 skeleton = NodePath("")
