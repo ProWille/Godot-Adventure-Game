@@ -10,9 +10,28 @@ public partial class DebugOverlay : CanvasLayer
 
     public override void _Ready()
     {
-        _debugLabel = GetNode<Label>("DebugLabel");
+        _debugLabel = GetNodeOrNull<Label>("DebugLabel");
+        if (!IsInstanceValid(_debugLabel))
+        {
+            GD.PrintErr($"{Name}.{nameof(_Ready)} : DebugLabel not found in current node.");
+            return;
+        }
+
         _player = GetTree().CurrentScene?.GetNodeOrNull<Node3D>("Player");
+        if (!IsInstanceValid(_player))
+        {
+            _debugLabel.Text = $"Player node not found in current scene.";
+            _debugLabel.LabelSettings.FontColor = Colors.Red;
+            return;
+        }
+
         _terrain = GetTree().CurrentScene?.GetNodeOrNull<TerrainController>("TerrainController");
+        if (!IsInstanceValid(_terrain))
+        {
+            _debugLabel.Text = $"TerrainController node not found in current scene.";
+            _debugLabel.LabelSettings.FontColor = Colors.Red;
+            return;
+        }
     }
 
     public override void _Process(double delta)

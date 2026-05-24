@@ -17,16 +17,16 @@ public partial class PlayerController : CharacterBody3D
 
     public override void _Ready()
     {
-        _camera = GetNode<Camera3D>("CameraPivot/Camera3D");
+        _camera = GetNodeOrNull<Camera3D>("CameraPivot/Camera3D");
         if (!IsInstanceValid(_camera))
         {
-            GD.PrintErr(Name, ".", nameof(_Ready), " : ", "Camera3D node not found as a child of Player.");
+            GD.PrintErr($"{Name}.{nameof(_Ready)} : Camera3D node not found in current node.");
         }
 
         _terrainController = GetTree().CurrentScene?.GetNodeOrNull<TerrainController>("TerrainController");
         if (!IsInstanceValid(_terrainController))
         {
-            GD.PrintErr(Name, ".", nameof(_Ready), " : ", "TerrainController not found.");
+            GD.PrintErr($"{Name}.{nameof(_Ready)} : TerrainController not found in current scene.");
         }
     }
 
@@ -62,7 +62,9 @@ public partial class PlayerController : CharacterBody3D
         newVelocity.X = direction.X * Speed;
         newVelocity.Z = direction.Z * Speed;
 
-        newVelocity.Y = IsInstanceValid(_terrainController) ? MoveAndSlideOnTerrain(delta, newVelocity.Y) : MoveAndSlideOnFloor(delta, newVelocity.Y);
+        newVelocity.Y = IsInstanceValid(_terrainController)
+            ? MoveAndSlideOnTerrain(delta, newVelocity.Y)
+            : MoveAndSlideOnFloor(delta, newVelocity.Y);
 
         Velocity = newVelocity;
         MoveAndSlide();

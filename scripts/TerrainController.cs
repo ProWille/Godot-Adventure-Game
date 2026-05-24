@@ -23,8 +23,6 @@ public enum BiomeType
 
 public partial class TerrainController : Node3D
 {
-    public Vector2I CurrentChunkCoord => _currentChunkCoord;
-
     [ExportGroup("Chunk Settings")]
 
     [Export] public FastNoiseLite MoistureNoise { get; set; } = new();
@@ -37,7 +35,7 @@ public partial class TerrainController : Node3D
     public int Resolution { get; set; } = 32;
     [Export(PropertyHint.Range, "4.0f, 256.0f, 4.0f, prefer_slider")]
     public float Height { get; set; } = 64.0f;
-    [Export(PropertyHint.Range, "1, 24, 1, prefer_slider")]
+    [Export(PropertyHint.Range, "0, 24, 1, prefer_slider")]
     public int RenderDistance { get; set; } = 4;
     [Export(PropertyHint.Range, "0.0, 0.5, 0.01, prefer_slider")]
     public float BiomeBlendWidth { get; set; } = 0.1f;
@@ -72,8 +70,9 @@ public partial class TerrainController : Node3D
     [Export] public MeshInstance3D TreeTemplate { get; set; }
     [Export] public bool TreesEnabled { get; set; } = true;
 
+    public Vector2I CurrentChunkCoord { get; private set; }
+
     private Node3D _chunkContainer;
-    private Vector2I _currentChunkCoord;
     private Node3D _player;
 
     private readonly Dictionary<Vector2I, MeshInstance3D> _chunks = [];
@@ -126,11 +125,15 @@ public partial class TerrainController : Node3D
             UpdateChunksForPosition(Vector3.Zero);
         }
 
-        _player = GetTree().CurrentScene?.GetNode<Node3D>("Player");
+        _player = GetTree().CurrentScene?.GetNodeOrNull<Node3D>("Player");
         if (!IsInstanceValid(_player))
         {
-            GD.PrintErr(Name, ".", nameof(_Ready), " : ", "Player node not found in current scene.");
+            GD.PrintErr($"{Name}.{nameof(_Ready)} : Player node not found in current scene.");
+            return;
         }
+
+        CurrentChunkCoord = GetChunkCoord(_player.GlobalPosition);
+        LoadChunksAroundPlayer();
     }
 
     public override void _Process(double delta)
@@ -144,6 +147,11 @@ public partial class TerrainController : Node3D
     public Vector2I GetChunkCoord(float worldX, float worldZ)
     {
         return new Vector2I((int)Math.Floor(worldX / ChunkSize), (int)Math.Floor(worldZ / ChunkSize));
+    }
+
+    public Vector2I GetChunkCoord(Vector3 position)
+    {
+        return GetChunkCoord(position.X, position.Z);
     }
 
     public float GetMoisture(float worldX, float worldZ)
@@ -278,10 +286,10 @@ public partial class TerrainController : Node3D
     {
         var newChunkCoord = GetChunkCoord(position.X, position.Z);
 
-        if (newChunkCoord == _currentChunkCoord)
+        if (newChunkCoord == CurrentChunkCoord)
             return;
 
-        _currentChunkCoord = newChunkCoord;
+        CurrentChunkCoord = newChunkCoord;
         LoadChunksAroundPlayer();
     }
 
@@ -293,7 +301,7 @@ public partial class TerrainController : Node3D
         {
             for (int z = -RenderDistance; z <= RenderDistance; z++)
             {
-                var coord = new Vector2I(_currentChunkCoord.X + x, _currentChunkCoord.Y + z);
+                var coord = new Vector2I(CurrentChunkCoord.X + x, CurrentChunkCoord.Y + z);
                 neededChunks.Add(coord);
 
                 bool shouldCreate;
