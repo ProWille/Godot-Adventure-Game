@@ -120,11 +120,6 @@ public partial class TerrainController : Node3D
             InitializeTreePlacer();
         }
 
-        if (!Engine.IsEditorHint())
-        {
-            UpdateChunksForPosition(Vector3.Zero);
-        }
-
         _player = GetTree().CurrentScene?.GetNodeOrNull<Node3D>("Player");
         if (!IsInstanceValid(_player))
         {
@@ -152,6 +147,13 @@ public partial class TerrainController : Node3D
     public Vector2I GetChunkCoord(Vector3 position)
     {
         return GetChunkCoord(position.X, position.Z);
+    }
+
+    public Vector3 GetWorldCoord(Vector2I coord)
+    {
+        var worldCoord = coord * ChunkSize;
+        var worldOffset = ChunkSize / 2;
+        return new Vector3I(worldCoord.X + worldOffset, 0, worldCoord.Y + worldOffset);
     }
 
     public float GetMoisture(float worldX, float worldZ)
@@ -331,22 +333,23 @@ public partial class TerrainController : Node3D
 
     private void QueueChunkGeneration(Vector2I coord)
     {
+        var worldCoord = GetWorldCoord(coord);
+
         var chunkMesh = IsInstanceValid(ChunkTemplate)
             ? ChunkTemplate.Duplicate() as MeshInstance3D
             : new MeshInstance3D();
 
         chunkMesh.Name = $"Chunk_{coord.X}_{coord.Y}";
-        chunkMesh.Position = new Vector3(coord.X * ChunkSize, 0, coord.Y * ChunkSize);
+        chunkMesh.Position = worldCoord;
         chunkMesh.Visible = true;
 
         _chunkContainer.AddChild(chunkMesh);
         _chunks[coord] = chunkMesh;
 
-        var capturedCoord = coord;
         var thread = new Thread(() =>
         {
-            var (mesh, hasOcean) = GenerateChunkMeshData(capturedCoord);
-            CallDeferred(nameof(AssignChunkMesh), capturedCoord, mesh, hasOcean);
+            var (mesh, hasOcean) = GenerateChunkMeshData(worldCoord);
+            CallDeferred(nameof(AssignChunkMesh), coord, mesh, hasOcean);
         });
         thread.Start();
     }
@@ -378,13 +381,13 @@ public partial class TerrainController : Node3D
         waterMesh.Visible = true;
 
         float waterLevel = (OceanHeightThreshold * 2.0f - 1.0f) * Height;
-        waterMesh.Position = new Vector3(coord.X * ChunkSize, waterLevel, coord.Y * ChunkSize);
+        waterMesh.Position = GetWorldCoord(coord) + new Vector3(0, waterLevel, 0);
 
         _chunkContainer.AddChild(waterMesh);
         _waterMeshes[coord] = waterMesh;
     }
 
-    private (ArrayMesh mesh, bool hasOcean) GenerateChunkMeshData(Vector2I coord)
+    private (ArrayMesh mesh, bool hasOcean) GenerateChunkMeshData(Vector3 position)
     {
         var plane = new PlaneMesh
         {
@@ -400,15 +403,13 @@ public partial class TerrainController : Node3D
         var tangentArray = planeArrays[(int)Mesh.ArrayType.Tangent].AsFloat32Array();
         var colorArray = new Color[vertexArray.Length];
 
-        var offsetX = coord.X * ChunkSize;
-        var offsetZ = coord.Y * ChunkSize;
         bool hasOcean = false;
 
         for (int i = 0; i < vertexArray.Length; i++)
         {
             var vertex = vertexArray[i];
-            var worldX = offsetX + vertex.X;
-            var worldZ = offsetZ + vertex.Z;
+            var worldX = position.X + vertex.X;
+            var worldZ = position.Z + vertex.Z;
 
             var heightValue = GetHeight(worldX, worldZ);
             vertex.Y = heightValue;
@@ -488,11 +489,11 @@ public partial class TerrainController : Node3D
 
         foreach (var (coord, chunk) in chunksToUpdate)
         {
-            var capturedCoord = coord;
+            var worldCoord = GetWorldCoord(coord);
             var thread = new Thread(() =>
             {
-                var result = GenerateChunkMeshData(capturedCoord);
-                pendingMeshes[capturedCoord] = result;
+                var result = GenerateChunkMeshData(worldCoord);
+                pendingMeshes[coord] = result;
             });
             threads.Add(thread);
             thread.Start();
