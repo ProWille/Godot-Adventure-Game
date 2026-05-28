@@ -5,38 +5,46 @@ using System.Linq;
 using System.Threading;
 using Godot;
 
-namespace AdventureGame;
+namespace AdventureGame.Scripts;
 
 public enum BiomeType
 {
     Ocean,
     Grassland,
     Forest,
-    Jungle,
-    Desert,
-    Savanna,
-    Tundra,
-    Mountain,
-    Sand,
-    Snow
+    Mountain
 }
 
 public partial class TerrainController : Node3D
 {
+    [ExportGroup("Noise Settings")]
+
+    [Export] public FastNoiseLite TerrainNoise { get; set; }
+    [Export] public FastNoiseLite ErosionNoise { get; set; }
+    [Export] public FastNoiseLite RnrNoise { get; set; }
+    [Export] public FastNoiseLite TemperatureNoise { get; set; }
+    [Export] public FastNoiseLite MoistureNoise { get; set; }
+    [Export] public FastNoiseLite DetailNoise { get; set; }
+    [Export] public FastNoiseLite ClutterNoise { get; set; }
+
+    [ExportGroup("Biome Generators")]
+
+    [Export] public OceanScript OceanGenerator { get; set; }
+    [Export] public PlainsScript PlainsGenerator { get; set; }
+    [Export] public ForestScript ForestGenerator { get; set; }
+    [Export] public MountainScript MountainGenerator { get; set; }
+
     [ExportGroup("Chunk Settings")]
 
-    [Export] public FastNoiseLite MoistureNoise { get; set; } = new();
-    [Export] public FastNoiseLite TemperatureNoise { get; set; } = new();
-    [Export] public FastNoiseLite HeightNoise { get; set; } = new();
     [Export] public MeshInstance3D ChunkTemplate { get; set; }
     [Export] public MeshInstance3D WaterTemplate { get; set; }
     [Export] public int ChunkSize { get; set; } = 64;
+    [Export(PropertyHint.Range, "0, 24, 1, prefer_slider")]
+    public int RenderDistance { get; set; } = 4;
     [Export(PropertyHint.Range, "4, 256, 4, prefer_slider")]
     public int Resolution { get; set; } = 32;
     [Export(PropertyHint.Range, "4.0f, 256.0f, 4.0f, prefer_slider")]
     public float Height { get; set; } = 64.0f;
-    [Export(PropertyHint.Range, "0, 24, 1, prefer_slider")]
-    public int RenderDistance { get; set; } = 4;
     [Export(PropertyHint.Range, "0.0, 0.5, 0.01, prefer_slider")]
     public float BiomeBlendWidth { get; set; } = 0.1f;
     [Export(PropertyHint.Range, "0, 10, 0.1, prefer_slider")]
@@ -48,14 +56,6 @@ public partial class TerrainController : Node3D
     public float OceanHeightThreshold { get; set; } = 0.4f;
     [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
     public float MountainHeightThreshold { get; set; } = 0.7f;
-    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
-    public float TundraTemperatureThreshold { get; set; } = 0.2f;
-    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
-    public float DesertTemperatureThreshold { get; set; } = 0.7f;
-    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
-    public float DesertMoistureThreshold { get; set; } = 0.3f;
-    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
-    public float SandMoistureThreshold { get; set; } = 0.15f;
     [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
     public float GrasslandMoistureThreshold { get; set; } = 0.3f;
     [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
@@ -78,6 +78,85 @@ public partial class TerrainController : Node3D
     private readonly Dictionary<Vector2I, MeshInstance3D> _chunks = [];
     private readonly Dictionary<Vector2I, MeshInstance3D> _waterMeshes = [];
     private readonly object _chunkLock = new();
+
+    private bool ValidateNoiseSettings()
+    {
+        if (!IsInstanceValid(TerrainNoise))
+        {
+            GD.PrintErr($"{Name}._Ready : TerrainNoise is not assigned.");
+            return false;
+        }
+        if (!IsInstanceValid(ErosionNoise))
+        {
+            GD.PrintErr($"{Name}._Ready : ErosionNoise is not assigned.");
+            return false;
+        }
+        if (!IsInstanceValid(RnrNoise))
+        {
+            GD.PrintErr($"{Name}._Ready : RnrNoise is not assigned.");
+            return false;
+        }
+        if (!IsInstanceValid(TemperatureNoise))
+        {
+            GD.PrintErr($"{Name}._Ready : TemperatureNoise is not assigned.");
+            return false;
+        }
+        if (!IsInstanceValid(MoistureNoise))
+        {
+            GD.PrintErr($"{Name}._Ready : MoistureNoise is not assigned.");
+            return false;
+        }
+        if (!IsInstanceValid(DetailNoise))
+        {
+            GD.PrintErr($"{Name}._Ready : DetailNoise is not assigned.");
+            return false;
+        }
+        if (!IsInstanceValid(ClutterNoise))
+        {
+            GD.PrintErr($"{Name}._Ready : ClutterNoise is not assigned.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool ValidateBiomeGenerators()
+    {
+        if (!IsInstanceValid(OceanGenerator))
+        {
+            GD.PrintErr($"{Name}._Ready : OceanGenerator is not assigned.");
+            return false;
+        }
+        if (!IsInstanceValid(PlainsGenerator))
+        {
+            GD.PrintErr($"{Name}._Ready : PlainsGenerator is not assigned.");
+            return false;
+        }
+        if (!IsInstanceValid(ForestGenerator))
+        {
+            GD.PrintErr($"{Name}._Ready : ForestGenerator is not assigned.");
+            return false;
+        }
+        if (!IsInstanceValid(MountainGenerator))
+        {
+            GD.PrintErr($"{Name}._Ready : MountainGenerator is not assigned.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private BiomeGenerator GetBiomeGenerator(BiomeType biome)
+    {
+        return biome switch
+        {
+            BiomeType.Ocean => OceanGenerator,
+            BiomeType.Grassland => PlainsGenerator,
+            BiomeType.Forest => ForestGenerator,
+            BiomeType.Mountain => MountainGenerator,
+            _ => ForestGenerator
+        };
+    }
 
     private void InitializeGrassPlacer()
     {
@@ -110,22 +189,31 @@ public partial class TerrainController : Node3D
         _chunkContainer = new Node3D { Name = "ChunkContainer" };
         AddChild(_chunkContainer);
 
-        if (GrassEnabled)
+        if (!ValidateNoiseSettings())
         {
-            InitializeGrassPlacer();
+            QueueFree();
+            return;
         }
 
-        if (TreesEnabled)
+        if (!ValidateBiomeGenerators())
         {
-            InitializeTreePlacer();
+            QueueFree();
+            return;
         }
 
         _player = GetTree().CurrentScene?.GetNodeOrNull<Node3D>("Player");
         if (!IsInstanceValid(_player))
         {
             GD.PrintErr($"{Name}.{nameof(_Ready)} : Player node not found in current scene.");
+            QueueFree();
             return;
         }
+
+        if (GrassEnabled)
+            InitializeGrassPlacer();
+
+        if (TreesEnabled)
+            InitializeTreePlacer();
 
         CurrentChunkCoord = GetChunkCoord(_player.GlobalPosition);
         LoadChunksAroundPlayer();
@@ -166,18 +254,41 @@ public partial class TerrainController : Node3D
         return (TemperatureNoise.GetNoise2D(worldX, worldZ) + 1.0f) / 2.0f;
     }
 
-    public float GetHeight(float worldX, float worldZ)
+    public float GetBaseHeight(float worldX, float worldZ)
     {
-        return HeightNoise.GetNoise2D(worldX, worldZ) * Height;
+        var continental = TerrainNoise.GetNoise2D(worldX, worldZ);
+        var rivers = RnrNoise.GetNoise2D(worldX, worldZ);
+        return Mathf.Clamp(continental + rivers, -1.0f, 1.0f) * Height;
+    }
+
+    public float GetHeightmap(float worldX, float worldZ)
+    {
+        var baseHeight = GetBaseHeight(worldX, worldZ);
+
+        var normalizedHeight = (baseHeight / Height + 1.0f) * 0.5f;
+        var moisture = GetMoisture(worldX, worldZ);
+        var temperature = GetTemperature(worldX, worldZ);
+        var biome = GetBiome(moisture, temperature, normalizedHeight);
+        var generator = GetBiomeGenerator(biome);
+
+        var biomeHeight = generator.HeightmapNoise.GetNoise2D(worldX, worldZ) * Height * 0.2f;
+        var erosionWeight = generator.ErosionWeight?.Sample(0.5f) ?? 1.0f;
+        var detailWeight = generator.DetailWeight?.Sample(0.5f) ?? 1.0f;
+
+        var height = baseHeight + biomeHeight;
+        height *= 1.0f - Mathf.Max(0.0f, ErosionNoise.GetNoise2D(worldX, worldZ)) * erosionWeight * 0.5f;
+        height += DetailNoise.GetNoise2D(worldX, worldZ) * detailWeight * 0.1f;
+
+        return height;
     }
 
     public Vector3 GetNormal(float worldX, float worldZ)
     {
         var epsilon = (float)ChunkSize / Resolution;
         var normal = new Vector3(
-            (GetHeight(worldX + epsilon, worldZ) - GetHeight(worldX - epsilon, worldZ)) / (2.0f * epsilon),
+            (GetHeightmap(worldX + epsilon, worldZ) - GetHeightmap(worldX - epsilon, worldZ)) / (2.0f * epsilon),
             1.0f,
-            (GetHeight(worldX, worldZ + epsilon) - GetHeight(worldX, worldZ - epsilon)) / (2.0f * epsilon)
+            (GetHeightmap(worldX, worldZ + epsilon) - GetHeightmap(worldX, worldZ - epsilon)) / (2.0f * epsilon)
         );
 
         return normal.Normalized();
@@ -187,9 +298,10 @@ public partial class TerrainController : Node3D
     {
         var moisture = GetMoisture(worldX, worldZ);
         var temperature = GetTemperature(worldX, worldZ);
-        var height = GetHeight(worldX, worldZ);
+        var height = GetBaseHeight(worldX, worldZ);
+        var normalizedHeight = (height / Height + 1.0f) / 2.0f;
 
-        return GetBiome(moisture, temperature, height);
+        return GetBiome(moisture, temperature, normalizedHeight);
     }
 
     public BiomeType GetBiome(float moisture, float temperature, float height)
@@ -198,29 +310,12 @@ public partial class TerrainController : Node3D
             return BiomeType.Ocean;
 
         if (height > MountainHeightThreshold)
-        {
-            if (temperature < TundraTemperatureThreshold)
-                return BiomeType.Snow;
             return BiomeType.Mountain;
-        }
 
-        if (temperature < TundraTemperatureThreshold)
-            return BiomeType.Tundra;
-
-        if (temperature > DesertTemperatureThreshold)
-        {
-            if (moisture < SandMoistureThreshold)
-                return BiomeType.Sand;
-            if (moisture < DesertMoistureThreshold)
-                return BiomeType.Desert;
-            return BiomeType.Savanna;
-        }
-
-        if (moisture < GrasslandMoistureThreshold)
-            return BiomeType.Grassland;
-        if (moisture < ForestMoistureThreshold)
+        if (moisture > ForestMoistureThreshold)
             return BiomeType.Forest;
-        return BiomeType.Jungle;
+
+        return BiomeType.Grassland;
     }
 
     public (BiomeType primary, BiomeType secondary, float blendFactor) GetBiomeWithBlend(float moisture, float temperature, float height)
@@ -239,32 +334,7 @@ public partial class TerrainController : Node3D
         {
             var dist = height - MountainHeightThreshold;
             var blendFactor = 1.0f - Math.Abs(dist) / edge;
-            if (temperature < TundraTemperatureThreshold)
-                return (BiomeType.Snow, BiomeType.Mountain, blendFactor);
-            return (BiomeType.Mountain, BiomeType.Tundra, blendFactor);
-        }
-
-        if (temperature < TundraTemperatureThreshold + edge && temperature > TundraTemperatureThreshold - edge)
-        {
-            var dist = temperature - TundraTemperatureThreshold;
-            var blendFactor = 1.0f - Math.Abs(dist) / edge;
-            return (BiomeType.Tundra, BiomeType.Forest, blendFactor);
-        }
-
-        if (temperature > DesertTemperatureThreshold - edge)
-        {
-            if (moisture < SandMoistureThreshold + edge && moisture > SandMoistureThreshold - edge)
-            {
-                var dist = moisture - SandMoistureThreshold;
-                var blendFactor = 1.0f - Math.Abs(dist) / edge;
-                return (BiomeType.Sand, BiomeType.Desert, blendFactor);
-            }
-            if (moisture < DesertMoistureThreshold + edge && moisture > DesertMoistureThreshold - edge)
-            {
-                var dist = moisture - DesertMoistureThreshold;
-                var blendFactor = 1.0f - Math.Abs(dist) / edge;
-                return (BiomeType.Desert, BiomeType.Savanna, blendFactor);
-            }
+            return (BiomeType.Mountain, BiomeType.Forest, blendFactor);
         }
 
         if (moisture < GrasslandMoistureThreshold + edge && moisture > GrasslandMoistureThreshold - edge)
@@ -278,7 +348,7 @@ public partial class TerrainController : Node3D
         {
             var dist = moisture - ForestMoistureThreshold;
             var blendFactor = 1.0f - Math.Abs(dist) / edge;
-            return (BiomeType.Forest, BiomeType.Jungle, blendFactor);
+            return (BiomeType.Forest, BiomeType.Grassland, blendFactor);
         }
 
         return (biome, biome, 0.0f);
@@ -356,15 +426,20 @@ public partial class TerrainController : Node3D
 
     private void AssignChunkMesh(Vector2I coord, ArrayMesh mesh, bool hasOcean)
     {
-        if (_chunks.TryGetValue(coord, out var chunk))
+        lock (_chunkLock)
         {
+            if (!_chunks.TryGetValue(coord, out var chunk))
+                return;
             chunk.Mesh = mesh;
         }
 
+        PlaceDecorations(coord, hasOcean);
+    }
+
+    private void PlaceDecorations(Vector2I coord, bool hasOcean)
+    {
         if (hasOcean && IsInstanceValid(WaterTemplate))
-        {
             CreateWaterMesh(coord);
-        }
 
         if (GrassEnabled && IsInstanceValid(GrassPlacer))
             GrassPlacer.GenerateForChunk(coord);
@@ -411,7 +486,7 @@ public partial class TerrainController : Node3D
             var worldX = position.X + vertex.X;
             var worldZ = position.Z + vertex.Z;
 
-            var heightValue = GetHeight(worldX, worldZ);
+            var heightValue = GetHeightmap(worldX, worldZ);
             vertex.Y = heightValue;
 
             var normal = GetNormal(worldX, worldZ);

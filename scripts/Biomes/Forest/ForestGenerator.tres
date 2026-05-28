@@ -1,0 +1,15 @@
+[gd_resource type="Resource" format=3 uid="uid://dq7dbpnk5p8d6"]
+
+[ext_resource type="Curve" uid="uid://c6rweyb5sprb3" path="res://scripts/Biomes/Forest/DetailWeight.tres" id="1_0sxjf"]
+[ext_resource type="Script" uid="uid://c0ri75yxxh3tb" path="res://scripts/Biomes/Forest/ForestScript.cs" id="1_5oobt"]
+[ext_resource type="Curve" uid="uid://uik8n83vcf8f" path="res://scripts/Biomes/Forest/ErosionWeight.tres" id="2_oltbf"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_oltbf"]
+frequency = 0.008
+fractal_octaves = 3
+
+[resource]
+script = ExtResource("1_5oobt")
+HeightmapNoise = SubResource("FastNoiseLite_oltbf")
+DetailWeight = ExtResource("1_0sxjf")
+ErosionWeight = ExtResource("2_oltbf")

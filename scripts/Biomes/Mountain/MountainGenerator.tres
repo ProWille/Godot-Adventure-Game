@@ -1,0 +1,15 @@
+[gd_resource type="Resource" format=3 uid="uid://dl7i0bdcaiksl"]
+
+[ext_resource type="Curve" uid="uid://cipnpqsexyn6e" path="res://scripts/Biomes/Mountain/DetailWeight.tres" id="1_6s2xe"]
+[ext_resource type="Script" uid="uid://m2plkd0e37mi" path="res://scripts/Biomes/Mountain/MountainScript.cs" id="1_agg8d"]
+[ext_resource type="Curve" uid="uid://c0hmmduy5fatl" path="res://scripts/Biomes/Mountain/ErosionWeight.tres" id="2_r0a6a"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_6s2xe"]
+fractal_type = 2
+fractal_octaves = 4
+
+[resource]
+script = ExtResource("1_agg8d")
+HeightmapNoise = SubResource("FastNoiseLite_6s2xe")
+DetailWeight = ExtResource("1_6s2xe")
+ErosionWeight = ExtResource("2_r0a6a")

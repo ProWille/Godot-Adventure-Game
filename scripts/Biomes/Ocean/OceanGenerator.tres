@@ -1,0 +1,15 @@
+[gd_resource type="Resource" format=3 uid="uid://k2hy1mwafmgo"]
+
+[ext_resource type="Curve" uid="uid://bnlkbks4xyfe4" path="res://scripts/Biomes/Ocean/DetailWeight.tres" id="1_2i1v8"]
+[ext_resource type="Script" uid="uid://di625iukr2105" path="res://scripts/Biomes/Ocean/OceanScript.cs" id="1_p74ul"]
+[ext_resource type="Curve" uid="uid://c248rq886nt5q" path="res://scripts/Biomes/Ocean/ErosionWeight.tres" id="2_lbks0"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_p74ul"]
+frequency = 0.002
+fractal_octaves = 1
+
+[resource]
+script = ExtResource("1_p74ul")
+HeightmapNoise = SubResource("FastNoiseLite_p74ul")
+DetailWeight = ExtResource("1_2i1v8")
+ErosionWeight = ExtResource("2_lbks0")

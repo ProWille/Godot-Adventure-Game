@@ -1,6 +1,6 @@
 using Godot;
 
-namespace AdventureGame;
+namespace AdventureGame.Scripts;
 
 public partial class PlayerController : CharacterBody3D
 {
@@ -72,7 +72,7 @@ public partial class PlayerController : CharacterBody3D
 
     private float MoveAndSlideOnTerrain(double delta, float velocityY)
     {
-        float terrainY = _terrainController.GetHeight(Position.X, Position.Z) + _terrainController.PlayerOffset;
+        float terrainY = _terrainController.GetHeightmap(Position.X, Position.Z) + _terrainController.PlayerOffset;
 
         if (_isJumping)
         {

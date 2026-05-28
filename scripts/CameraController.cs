@@ -1,7 +1,7 @@
 using System;
 using Godot;
 
-namespace AdventureGame;
+namespace AdventureGame.Scripts;
 
 public partial class CameraController : Camera3D
 {

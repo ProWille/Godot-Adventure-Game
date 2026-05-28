@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Godot;
 
-namespace AdventureGame;
+namespace AdventureGame.Scripts;
 
 public partial class GrassPlacer : Resource
 {
@@ -10,10 +10,6 @@ public partial class GrassPlacer : Resource
     public int GrasslandDensity { get; set; } = 100;
     [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
     public int ForestDensity { get; set; } = 80;
-    [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
-    public int JungleDensity { get; set; } = 120;
-    [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
-    public int SavannaDensity { get; set; } = 60;
     [Export(PropertyHint.Range, "0.1f, 2.0f, 0.1f, prefer_slider")]
     public float MinHeight { get; set; } = 0.5f;
     [Export(PropertyHint.Range, "0.1f, 2.0f, 0.1f, prefer_slider")]
@@ -162,7 +158,7 @@ public partial class GrassPlacer : Resource
                 var worldX = offsetX + x;
                 var worldZ = offsetZ + z;
 
-                var height = _terrain.HeightNoise.GetNoise2D(worldX, worldZ) * _terrain.Height;
+                var height = _terrain.GetHeightmap(worldX, worldZ);
                 var normalizedHeight = (height / _terrain.Height + 1.0f) / 2.0f;
                 var moisture = (_terrain.MoistureNoise.GetNoise2D(worldX, worldZ) + 1.0f) / 2.0f;
                 var temperature = (_terrain.TemperatureNoise.GetNoise2D(worldX, worldZ) + 1.0f) / 2.0f;
@@ -172,13 +168,7 @@ public partial class GrassPlacer : Resource
                     continue;
 
                 var noiseValue = _placementNoise.GetNoise2D(worldX, worldZ);
-                var densityFactor = biome switch
-                {
-                    BiomeType.Jungle => JungleDensity,
-                    BiomeType.Forest => ForestDensity,
-                    BiomeType.Savanna => SavannaDensity,
-                    _ => GrasslandDensity
-                };
+                var densityFactor = biome == BiomeType.Forest ? ForestDensity : GrasslandDensity;
 
                 if (biomeDensity <= 0)
                     continue;
@@ -203,8 +193,7 @@ public partial class GrassPlacer : Resource
 
     private static bool IsValidGrassBiome(BiomeType biome)
     {
-        return biome == BiomeType.Grassland || biome == BiomeType.Forest ||
-               biome == BiomeType.Jungle || biome == BiomeType.Savanna;
+        return biome == BiomeType.Grassland || biome == BiomeType.Forest;
     }
 
     private int GetBiomeDensity(Vector2I coord)
@@ -212,20 +201,13 @@ public partial class GrassPlacer : Resource
         var centerX = coord.X * _terrain.ChunkSize + _terrain.ChunkSize / 2f;
         var centerZ = coord.Y * _terrain.ChunkSize + _terrain.ChunkSize / 2f;
 
-        var height = _terrain.HeightNoise.GetNoise2D(centerX, centerZ) * _terrain.Height;
+        var height = _terrain.GetHeightmap(centerX, centerZ);
         var normalizedHeight = (height / _terrain.Height + 1.0f) / 2.0f;
         var moisture = (_terrain.MoistureNoise.GetNoise2D(centerX, centerZ) + 1.0f) / 2.0f;
         var temperature = (_terrain.TemperatureNoise.GetNoise2D(centerX, centerZ) + 1.0f) / 2.0f;
 
         var biome = _terrain.GetBiome(moisture, temperature, normalizedHeight);
 
-        return biome switch
-        {
-            BiomeType.Jungle => JungleDensity,
-            BiomeType.Forest => ForestDensity,
-            BiomeType.Savanna => SavannaDensity,
-            BiomeType.Grassland => GrasslandDensity,
-            _ => 0
-        };
+        return biome == BiomeType.Forest ? ForestDensity : GrasslandDensity;
     }
 }

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" format=3 uid="uid://b43s8hhclyn5r"]
+
+[ext_resource type="Curve" uid="uid://buggs6027nedh" path="res://scripts/Biomes/Plains/DetailWeight.tres" id="1_ndv8e"]
+[ext_resource type="Script" uid="uid://bp3pbf6rvovfr" path="res://scripts/Biomes/Plains/PlainsScript.cs" id="1_xaqki"]
+[ext_resource type="Curve" uid="uid://ycsoll8rvt4l" path="res://scripts/Biomes/Plains/ErosionWeight.tres" id="2_j0wq0"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_ndv8e"]
+noise_type = 3
+frequency = 0.003
+fractal_octaves = 2
+
+[resource]
+script = ExtResource("1_xaqki")
+HeightmapNoise = SubResource("FastNoiseLite_ndv8e")
+DetailWeight = ExtResource("1_ndv8e")
+ErosionWeight = ExtResource("2_j0wq0")

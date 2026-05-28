@@ -2,14 +2,12 @@ using System;
 using System.Collections.Generic;
 using Godot;
 
-namespace AdventureGame;
+namespace AdventureGame.Scripts;
 
 public partial class TreePlacer : Resource
 {
     [Export(PropertyHint.Range, "0, 50, 1, prefer_slider")]
-    public int ForestDensity { get; set; } = 10; 
-    [Export(PropertyHint.Range, "0, 50, 1, prefer_slider")]
-    public int JungleDensity { get; set; } = 20;
+    public int ForestDensity { get; set; } = 10;
     [Export(PropertyHint.Range, "0.0f, 1.0f, 0.05f, prefer_slider")]
     public float MinHeightThreshold { get; set; } = 0.35f;
     [Export(PropertyHint.Range, "0.0f, 1.0f, 0.05f, prefer_slider")]
@@ -55,21 +53,17 @@ public partial class TreePlacer : Resource
 
         var chunkSize = _terrain.ChunkSize;
 
-        var centerHeight = _terrain.GetHeight(coord.X + chunkSize / 2f, coord.Y + chunkSize / 2f);
+        var centerHeight = _terrain.GetHeightmap(coord.X * chunkSize + chunkSize / 2f, coord.Y * chunkSize + chunkSize / 2f);
         var normalizedCenterHeight = (centerHeight / _terrain.Height + 1.0f) / 2.0f;
 
-        var moisture = _terrain.GetMoisture(coord.X + chunkSize / 2f, coord.Y + chunkSize / 2f);
-        var temperature = _terrain.GetTemperature(coord.X + chunkSize / 2f, coord.Y + chunkSize / 2f);
-
-        var biome = _terrain.GetBiome(moisture, temperature, normalizedCenterHeight);
-
-        if (biome != BiomeType.Forest && biome != BiomeType.Jungle)
+        var biome = _terrain.GetBiome(coord.X * chunkSize + chunkSize / 2f, coord.Y * chunkSize + chunkSize / 2f);
+        if (biome != BiomeType.Forest)
             return;
 
         if (normalizedCenterHeight < MinHeightThreshold || normalizedCenterHeight > MaxHeightThreshold)
             return;
 
-        var density = biome == BiomeType.Jungle ? JungleDensity : ForestDensity;
+        var density = ForestDensity;
         var adjustedDensity = density + (int)(_placementNoise.GetNoise2D(coord.X * DensityNoiseScale, coord.Y * DensityNoiseScale) * DensityNoiseAmplitude);
         adjustedDensity = Math.Max(0, adjustedDensity);
 
@@ -175,7 +169,7 @@ public partial class TreePlacer : Resource
                 var worldX = offsetX + x;
                 var worldZ = offsetZ + z;
 
-                var height = _terrain.GetHeight(worldX, worldZ);
+                var height = _terrain.GetHeightmap(worldX, worldZ);
                 var normalizedHeight = (height / _terrain.Height + 1.0f) / 2.0f;
 
                 if (normalizedHeight < MinHeightThreshold || normalizedHeight > MaxHeightThreshold)
@@ -185,7 +179,7 @@ public partial class TreePlacer : Resource
                 var temperature = _terrain.GetTemperature(worldX, worldZ);
 
                 var biome = _terrain.GetBiome(moisture, temperature, normalizedHeight);
-                if (biome != BiomeType.Forest && biome != BiomeType.Jungle)
+                if (biome != BiomeType.Forest)
                     continue;
 
                 var noiseVal = _placementNoise.GetNoise2D(worldX, worldZ);

@@ -1,6 +1,6 @@
 using Godot;
 
-namespace AdventureGame;
+namespace AdventureGame.Scripts;
 
 public partial class DebugOverlay : CanvasLayer
 {
@@ -43,8 +43,9 @@ public partial class DebugOverlay : CanvasLayer
         var chunk = _terrain.GetChunkCoord(pos.X, pos.Z);
         var moisture = _terrain.GetMoisture(pos.X, pos.Z);
         var temperature = _terrain.GetTemperature(pos.X, pos.Z);
-        var height = _terrain.GetHeight(pos.X, pos.Z);
-        var biome = _terrain.GetBiome(moisture, temperature, height);
+        var height = _terrain.GetHeightmap(pos.X, pos.Z);
+        var normalizedHeight = (height / _terrain.Height + 1.0f) / 2.0f;
+        var biome = _terrain.GetBiome(moisture, temperature, normalizedHeight);
         _debugLabel.Text = $"""
         FPS: {Engine.GetFramesPerSecond()}
         Position: ({pos.X:F1}, {pos.Y:F1}, {pos.Z:F1})
