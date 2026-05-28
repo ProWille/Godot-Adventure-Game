@@ -25,4 +25,3 @@ mono_crash.*.json
 /demo/
 .vscode/
 *.old
-*.uid
