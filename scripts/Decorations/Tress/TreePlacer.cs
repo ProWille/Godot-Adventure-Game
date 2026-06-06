@@ -24,6 +24,8 @@ public partial class TreePlacer : Resource
     public int RandomSeedBase { get; set; } = 54321;
     [Export(PropertyHint.Range, "0.01f, 0.5f, 0.001f, prefer_slider")]
     public float PlacementFrequency { get; set; } = 0.03f;
+    [Export(PropertyHint.Range, "0.0f, 5.0f, 0.1f, prefer_slider")]
+    public float TerrainOffset { get; set; } = 0.0f;
 
     private TerrainController _terrain;
     private FastNoiseLite _placementNoise;
@@ -71,35 +73,7 @@ public partial class TreePlacer : Resource
         if (positions.Count == 0)
             return;
 
-        var multiMesh = new MultiMesh
-        {
-            TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
-            InstanceCount = positions.Count,
-            Mesh = _terrain.TreeTemplate.Mesh
-        };
-
-        var random = new Random(coord.X * 10000 + coord.Y + RandomSeedBase);
-        for (int i = 0; i < positions.Count; i++)
-        {
-            var rotation = (float)(random.NextDouble() * Math.PI * 2);
-            var scale = (float)(random.NextDouble() * (MaxScale - MinScale) + MinScale);
-            var pos = positions[i];
-
-            var transform = Transform3D.Identity
-                .Rotated(Vector3.Up, rotation)
-                .Scaled(new Vector3(scale, scale, scale))
-                .Translated(pos);
-
-            multiMesh.SetInstanceTransform(i, transform);
-        }
-
-        var chunkPos = _terrain.GetChunkCoord(coord.X, coord.Y);
-        var newInstance = new MultiMeshInstance3D
-        {
-            Name = $"Trees_{chunkPos.X}_{chunkPos.Y}",
-            Multimesh = multiMesh,
-            Position = new Vector3(chunkPos.X, 0, chunkPos.Y)
-        };
+        var newInstance = CreateInstance(coord, positions);
 
         lock (_lock)
         {
@@ -209,5 +183,41 @@ public partial class TreePlacer : Resource
         }
 
         return result;
+    }
+
+    private MultiMeshInstance3D CreateInstance(Vector2I coord, List<Vector3> positions)
+    {
+        var multiMesh = new MultiMesh
+        {
+            TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
+            InstanceCount = positions.Count,
+            Mesh = _terrain.TreeTemplate.Mesh
+        };
+
+        var random = new Random(coord.X * 10000 + coord.Y + RandomSeedBase);
+        for (int i = 0; i < positions.Count; i++)
+        {
+            var rotation = (float)(random.NextDouble() * Math.PI * 2);
+            var scale = (float)(random.NextDouble() * (MaxScale - MinScale) + MinScale);
+            var pos = positions[i];
+            pos.Y += TerrainOffset * scale;
+
+            var transform = Transform3D.Identity
+                .Rotated(Vector3.Up, rotation)
+                .Scaled(new Vector3(scale, scale, scale))
+                .Translated(pos);
+
+            multiMesh.SetInstanceTransform(i, transform);
+        }
+
+        var chunkPos = _terrain.GetChunkCoord(coord.X, coord.Y);
+        var newInstance = new MultiMeshInstance3D
+        {
+            Name = $"Trees_{chunkPos.X}_{chunkPos.Y}",
+            Multimesh = multiMesh,
+            Position = new Vector3(chunkPos.X, 0.0f, chunkPos.Y)
+        };
+
+        return newInstance;
     }
 }

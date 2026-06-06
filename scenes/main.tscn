@@ -11,6 +11,10 @@
 [ext_resource type="PackedScene" uid="uid://byfa1tjtd5hfw" path="res://scenes/camera.tscn" id="5_tbgi4"]
 [ext_resource type="Resource" uid="uid://dl7i0bdcaiksl" path="res://scripts/Biomes/Mountain/MountainGenerator.tres" id="6_muem4"]
 [ext_resource type="Shader" uid="uid://dk4dl823iwdrh" path="res://shaders/water.gdshader" id="9_ya4ey"]
+[ext_resource type="Texture2D" uid="uid://dl0ekiocrf7mh" path="res://assets/Blockbench/terrain/forest_terrain_texture.png" id="10_jbj1t"]
+[ext_resource type="Texture2D" uid="uid://dlrx4gwgk2itk" path="res://assets/Blockbench/terrain/sand_terrain_texture.png" id="11_a8y0u"]
+[ext_resource type="Texture2D" uid="uid://c7hukusiq4wi6" path="res://assets/Blockbench/terrain/grass_terrain_texture.png" id="11_jbj1t"]
+[ext_resource type="Texture2D" uid="uid://b3a5puaud8b3q" path="res://assets/Blockbench/terrain/rock_terrain_texture.png" id="12_dp3eg"]
 [ext_resource type="Script" uid="uid://cqy0doqb1pwrd" path="res://scripts/DebugOverlay.cs" id="12_eb6dy"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_eb6dy"]
@@ -43,17 +47,18 @@ fractal_octaves = 4
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_tbgi4"]
 render_priority = 0
 shader = ExtResource("1_sugp2")
+shader_parameter/sand_texture = ExtResource("11_a8y0u")
+shader_parameter/grass_texture = ExtResource("11_jbj1t")
+shader_parameter/forest_texture = ExtResource("10_jbj1t")
+shader_parameter/rock_texture = ExtResource("12_dp3eg")
 shader_parameter/texture_scale = 10.0
-shader_parameter/use_textures = false
+shader_parameter/use_textures = true
 shader_parameter/sand_color = Color(0.9, 0.76, 0.5, 1)
 shader_parameter/grass_color = Color(0.4, 0.8, 0.2, 1)
 shader_parameter/forest_color = Color(0.15, 0.45, 0.1, 1)
 shader_parameter/rock_color = Color(0.7, 0.7, 0.8, 1)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tipki"]
-
-[sub_resource type="CapsuleMesh" id="CapsuleMesh_tipki"]
-material = SubResource("StandardMaterial3D_tipki")
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_a8y0u"]
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_trceg"]
 
@@ -143,7 +148,7 @@ skeleton = NodePath("../..")
 
 [node name="TreeTemplate" type="MeshInstance3D" parent="TerrainController" unique_id=1508519750]
 visible = false
-mesh = SubResource("CapsuleMesh_tipki")
+mesh = SubResource("CapsuleMesh_a8y0u")
 skeleton = NodePath("")
 
 [node name="WaterTemplate" type="MeshInstance3D" parent="TerrainController" unique_id=1367659543]

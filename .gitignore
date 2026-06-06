@@ -23,5 +23,7 @@ mono_crash.*.json
 /addons/
 /data/
 /demo/
+/docs/
 .vscode/
+.opencode/
 *.old

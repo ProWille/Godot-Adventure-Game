@@ -8,19 +8,30 @@ Godot 4.x C# adventure game with chunk-based procedural terrain generation using
 
 ```
 /home/william/Development/Godot/Adventure-Game/
-├── scripts/              # C# source files
-│   ├── TerrainController.cs   # Main terrain/chunk system
-│   ├── GrassController.cs     # Grass vegetation system
-│   ├── TreeController.cs      # Tree vegetation system
-│   ├── PlayerController.cs    # Player movement
-│   └── CameraController.cs   # Camera controls
-├── scenes/              # Godot scene files (.tscn)
+├── scripts/                     # C# source files
+│   ├── TerrainController.cs     # Main terrain/chunk system
+│   ├── CameraController.cs      # Camera controls
+│   ├── DebugOverlay.cs          # Debug HUD (FPS, position, biome)
+│   ├── PlayerController.cs      # Player movement
+│   ├── Biomes/                  # Biome generator resources
+│   │   ├── BiomeGenerator.cs    # Base class (HeightmapNoise, DecorationNoise, DetailWeight, ErosionWeight)
+│   │   ├── Ocean/OceanScript.cs
+│   │   ├── Plains/PlainsScript.cs
+│   │   ├── Forest/ForestScript.cs
+│   │   └── Mountain/MountainScript.cs
+│   └── Decorations/
+│       ├── Grass/GrassPlacer.cs # Grass placement (Grassland + Forest biomes)
+│       └── Tress/TreePlacer.cs  # Tree placement (Forest biome only)
+├── scenes/                      # Godot scene files (.tscn)
 │   ├── main.tscn
 │   ├── player.tscn
-│   └── test.tscn
-├── shaders/             # GLSL shaders
+│   ├── camera.tscn
+│   ├── sky.tscn
+│   ├── test.tscn
+│   └── kitty.tscn
+├── shaders/                     # GLSL shaders
 │   └── terrain.gdshader
-├── project.godot        # Godot project file
+├── project.godot
 ├── Adventure-Game.csproj
 └── Adventure-Game.sln
 ```
@@ -34,37 +45,24 @@ dotnet build
 
 ### Open in Godot
 ```bash
-# Launch Godot editor (requires Godot 4.x installed)
 godot --path .
-# Or open via Godot editor GUI
 ```
 
 ### Run the game
 ```bash
-# From Godot editor: F5 to run
-# Or from command line (after export)
 godot --path . --quit
 ```
 
 ### Code Analysis
 ```bash
-# Check for errors (requires .NET SDK)
+# Check for errors
 dotnet build --no-restore
-
-# LSP errors shown in Godot editor automatically
-```
-
-### Testing
-- **No test framework detected** - Consider adding one ( NUnit, xUnit, or Godot's built-in testing)
-- To run a single test when tests exist:
-```bash
-dotnet test --filter "FullyQualifiedName~TestClassName.TestMethodName"
 ```
 
 ## Code Style Guidelines
 
 ### General Principles
-- **File-scoped namespaces** - Use `namespace X.Y;` without braces
+- **File-scoped namespaces** - Use `namespace AdventureGame.Scripts;` without braces
 - **Partial classes** - Godot scripts use `public partial class`
 - **Tool attribute** - Use `[Tool]` for editor-only scripts that run in the editor
 
@@ -75,7 +73,7 @@ dotnet test --filter "FullyQualifiedName~TestClassName.TestMethodName"
 | Private fields | `_camelCase` | `_speed`, `_chunkSize` |
 | Public properties | PascalCase | `Speed`, `ChunkSize` |
 | Methods | PascalCase | `GetHeight()`, `GenerateChunkMesh()` |
-| Classes | PascalCase | `TerrainController`, `GrassController` |
+| Classes | PascalCase | `TerrainController`, `GrassPlacer` |
 | Enums | PascalCase | `BiomeType.Ocean` |
 | Constants | PascalCase | `MaxHeight`, `DefaultChunkSize` |
 | Files | PascalCase | `TerrainController.cs` |
@@ -87,7 +85,6 @@ Always use this pattern for Godot exports:
 [Export] private float _speed = 15.0f;
 public float Speed => _speed;
 
-// With property hint for editor sliders:
 [Export(PropertyHint.Range, "1, 100, 1, prefer_slider")]
 private int _resolution = 32;
 public int Resolution
@@ -96,7 +93,7 @@ public int Resolution
     set
     {
         _resolution = Math.Clamp(value, 1, 100);
-        RegenerateAllChunks();  // Trigger update on change
+        RegenerateAllChunks();
     }
 }
 ```
@@ -105,7 +102,6 @@ public int Resolution
 ```csharp
 using System;
 using System.Collections.Generic;
-using System.Linq;  // If used
 using Godot;
 ```
 
@@ -117,18 +113,7 @@ using Godot;
 private readonly Dictionary<Vector2I, MeshInstance3D> _chunks = [];
 private readonly List<Vector3> _positions = new();
 ```
-- **Default initialization for exports**: `[Export] private FastNoiseLite _noise = new();`
 - **Use `IsInstanceValid()`** to check for null/invalid Godot objects
-
-### Collections
-
-| Type | Use Case |
-|------|----------|
-| `[]` / `Array` | Fixed-size arrays |
-| `List<T>` | Dynamic lists |
-| `Dictionary<K,V>` | Key-value maps with `[]` access |
-| `HashSet<T>` | Unique items, O(1) lookup |
-| `Queue<T>` | FIFO operations |
 
 ### Error Handling
 
@@ -137,14 +122,12 @@ private readonly List<Vector3> _positions = new();
 - **Try pattern** for dictionaries:
 ```csharp
 if (_chunks.TryGetValue(coord, out var chunk))
-{
     chunk.QueueFree();
-}
 ```
 
 ### Threading
 
-- Use `System.Threading` for background work
+- Use `System.Threading` for background generation
 - Use `CallDeferred()` to run code on main thread:
 ```csharp
 var thread = new Thread(() =>
@@ -166,27 +149,45 @@ thread.Start();
 ## Biome System
 
 The terrain uses three noise types:
-- **Height noise**: Terrain elevation
+- **Height noise** (`TerrainNoise` + `RnrNoise`): Terrain elevation
 - **Moisture noise**: Water/humidity levels (0-1 normalized)
 - **Temperature noise**: Temperature levels (0-1 normalized)
 
-Biomes are determined by moisture, temperature, and normalized height:
-- Ocean, Grassland, Forest, Jungle, Desert, Savanna, Tundra, Mountain
+### Biomes (4-current)
+Determined by height and moisture:
 
-Vertex colors store biome weights for shader-based texture blending.
+| Biome | Conditions |
+|-------|-----------|
+| Ocean | `height < OceanHeightThreshold` (default 0.4) |
+| Grassland | `height` 0.4–0.7, `moisture < ForestMoistureThreshold` (0.6) |
+| Forest | `height` 0.4–0.7, `moisture > 0.6` |
+| Mountain | `height > MountainHeightThreshold` (default 0.7) |
+
+### Height Compositing
+- `GetBaseHeight()` — global noise only (`Clamp(TerrainNoise + RnrNoise, -1, 1) × Height`) — used for biome decision
+- `GetHeightmap()` — base + biome HeightmapNoise offset + erosion compositing + detail noise
+
+### Vertex Color Encoding
+Biome is baked into mesh vertex colors during chunk generation:
+- `R = primaryBiome / 10` (0=Ocean, 1=Grassland, 2=Forest, 3=Mountain)
+- `G = blendFactor` (0–1 transition between primary and secondary)
+- `B = secondaryBiome / 10`
+- Shader decodes these to pick material colors/textures
 
 ## Common Tasks
 
 ### Adding a new biome
 1. Add to `BiomeType` enum in TerrainController.cs
-2. Update `GetBiome()` method with new conditions
-3. Update `GetBiomeColorWeights()` for vertex colors
-4. Update GrassController/TreeController density logic if needed
+2. Update `GetBiome()` with new conditions
+3. Create a new `BiomeGenerator` subclass in `scripts/Biomes/<Name>/`
+4. Update `GetBiomeGenerator()` mapping in TerrainController.cs
+5. Update GrassPlacer/TreePlacer density logic if needed
+6. Add shader case in `terrain.gdshader`
 
 ### Modifying terrain generation
-1. Edit `GenerateChunkMeshData()` in TerrainController.cs
-2. Changes auto-propagate due to property setters calling `RegenerateAllChunks()`
+1. Edit `GetBaseHeight()` or `GetHeightmap()` in TerrainController.cs
+2. Or adjust per-biome generators' HeightmapNoise/DetailWeight/ErosionWeight exports
 
 ### Adding vegetation density
-1. Export new density property in GrassController/TreeController
-2. Update `GetBiomeDensity()` to use new property
+1. Export new density property in GrassPlacer/TreePlacer
+2. Update `GetBiomeDensity()` to use the new property

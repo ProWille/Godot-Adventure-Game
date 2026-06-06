@@ -4,3 +4,4 @@
 
 [resource]
 script = ExtResource("1_7tvel")
+TerrainOffset = 1.0
