@@ -4,4 +4,6 @@
 
 [resource]
 script = ExtResource("1_7tvel")
-TerrainOffset = 1.0
+ForestDensity = 30
+GrasslandDensity = 0
+DensityThreshold = 0.5

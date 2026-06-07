@@ -26,4 +26,5 @@ mono_crash.*.json
 /docs/
 .vscode/
 .opencode/
+.superpowers/
 *.old

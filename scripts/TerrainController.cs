@@ -161,7 +161,10 @@ public partial class TerrainController : Node3D
     private void InitializeGrassPlacer()
     {
         if (!IsInstanceValid(GrassPlacer))
+        {
+            GD.PrintErr($"{Name}._Ready : GrassGenerator is not assigned.");
             return;
+        }
 
         GrassPlacer.Initialize(this);
 
@@ -174,7 +177,10 @@ public partial class TerrainController : Node3D
     private void InitializeTreePlacer()
     {
         if (!IsInstanceValid(TreePlacer))
+        {
+            GD.PrintErr($"{Name}._Ready : TreeGenerator is not assigned.");
             return;
+        }
 
         TreePlacer.Initialize(this);
 
@@ -261,11 +267,23 @@ public partial class TerrainController : Node3D
         return Mathf.Clamp(continental + rivers, -1.0f, 1.0f) * Height;
     }
 
+    public float GetNormalizedHeight(float worldX, float worldZ)
+    {
+        var baseHeight = GetBaseHeight(worldX, worldZ);
+        return GetNormalizedHeight(baseHeight);
+    }
+
+    public float GetNormalizedHeight(float baseHeight)
+    {
+        var normalizedHeight = (baseHeight / Height + 1.0f) * 0.5f;
+        return normalizedHeight;
+    }
+
     public float GetHeightmap(float worldX, float worldZ)
     {
         var baseHeight = GetBaseHeight(worldX, worldZ);
 
-        var normalizedHeight = (baseHeight / Height + 1.0f) * 0.5f;
+        var normalizedHeight = GetNormalizedHeight(baseHeight);
         var moisture = GetMoisture(worldX, worldZ);
         var temperature = GetTemperature(worldX, worldZ);
         var biome = GetBiome(moisture, temperature, normalizedHeight);

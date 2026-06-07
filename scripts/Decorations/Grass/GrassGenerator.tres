@@ -4,3 +4,5 @@
 
 [resource]
 script = ExtResource("1_u2avk")
+MinScale = 2.0
+MaxScale = 3.0
