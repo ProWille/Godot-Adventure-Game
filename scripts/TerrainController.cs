@@ -29,10 +29,10 @@ public partial class TerrainController : Node3D
 
     [ExportGroup("Biome Generators")]
 
-    [Export] public OceanScript OceanGenerator { get; set; }
-    [Export] public PlainsScript PlainsGenerator { get; set; }
-    [Export] public ForestScript ForestGenerator { get; set; }
-    [Export] public MountainScript MountainGenerator { get; set; }
+    [Export] public BiomeGenerator OceanGenerator { get; set; }
+    [Export] public BiomeGenerator PlainsGenerator { get; set; }
+    [Export] public BiomeGenerator ForestGenerator { get; set; }
+    [Export] public BiomeGenerator MountainGenerator { get; set; }
 
     [ExportGroup("Chunk Settings")]
 
@@ -63,12 +63,15 @@ public partial class TerrainController : Node3D
 
     [ExportGroup("Decoration Settings")]
 
-    [Export] public GrassPlacer GrassPlacer { get; set; }
-    [Export] public MeshInstance3D GrassTemplate { get; set; }
-    [Export] public bool GrassEnabled { get; set; } = true;
-    [Export] public TreePlacer TreePlacer { get; set; }
+    [Export] public DecorationGenerator TreeGenerator { get; set; }
     [Export] public MeshInstance3D TreeTemplate { get; set; }
     [Export] public bool TreesEnabled { get; set; } = true;
+    [Export] public DecorationGenerator GrassGenerator { get; set; }
+    [Export] public MeshInstance3D GrassTemplate { get; set; }
+    [Export] public bool GrassEnabled { get; set; } = true;
+    [Export] public DecorationGenerator StoneGenerator { get; set; }
+    [Export] public MeshInstance3D StoneTemplate { get; set; }
+    [Export] public bool StonesEnabled { get; set; } = true;
 
     public Vector2I CurrentChunkCoord { get; private set; }
 
@@ -160,33 +163,33 @@ public partial class TerrainController : Node3D
 
     private void InitializeGrassPlacer()
     {
-        if (!IsInstanceValid(GrassPlacer))
+        if (!IsInstanceValid(GrassGenerator))
         {
             GD.PrintErr($"{Name}._Ready : GrassGenerator is not assigned.");
             return;
         }
 
-        GrassPlacer.Initialize(this);
+        GrassGenerator.Initialize(this);
 
         foreach (var coord in _chunks.Keys)
         {
-            GrassPlacer.GenerateForChunk(coord);
+            GrassGenerator.GenerateForChunk(coord);
         }
     }
 
     private void InitializeTreePlacer()
     {
-        if (!IsInstanceValid(TreePlacer))
+        if (!IsInstanceValid(TreeGenerator))
         {
             GD.PrintErr($"{Name}._Ready : TreeGenerator is not assigned.");
             return;
         }
 
-        TreePlacer.Initialize(this);
+        TreeGenerator.Initialize(this);
 
         foreach (var coord in _chunks.Keys)
         {
-            TreePlacer.GenerateForChunk(coord);
+            TreeGenerator.GenerateForChunk(coord);
         }
     }
 
@@ -459,11 +462,11 @@ public partial class TerrainController : Node3D
         if (hasOcean && IsInstanceValid(WaterTemplate))
             CreateWaterMesh(coord);
 
-        if (GrassEnabled && IsInstanceValid(GrassPlacer))
-            GrassPlacer.GenerateForChunk(coord);
+        if (GrassEnabled && IsInstanceValid(GrassGenerator))
+            GrassGenerator.GenerateForChunk(coord);
 
-        if (TreesEnabled && IsInstanceValid(TreePlacer))
-            TreePlacer.GenerateForChunk(coord);
+        if (TreesEnabled && IsInstanceValid(TreeGenerator))
+            TreeGenerator.GenerateForChunk(coord);
     }
 
     private void CreateWaterMesh(Vector2I coord)
@@ -553,11 +556,11 @@ public partial class TerrainController : Node3D
             _waterMeshes.Remove(coord);
         }
 
-        if (GrassEnabled && IsInstanceValid(GrassPlacer))
-            GrassPlacer.RemoveForChunk(coord);
+        if (GrassEnabled && IsInstanceValid(GrassGenerator))
+            GrassGenerator.RemoveForChunk(coord);
 
-        if (TreesEnabled && IsInstanceValid(TreePlacer))
-            TreePlacer.RemoveForChunk(coord);
+        if (TreesEnabled && IsInstanceValid(TreeGenerator))
+            TreeGenerator.RemoveForChunk(coord);
     }
 
     private void RegenerateAllChunks()
@@ -613,21 +616,21 @@ public partial class TerrainController : Node3D
             }
         }
 
-        if (GrassEnabled && IsInstanceValid(GrassPlacer))
+        if (GrassEnabled && IsInstanceValid(GrassGenerator))
         {
-            GrassPlacer.ClearAll();
+            GrassGenerator.ClearAll();
             foreach (var coord in _chunks.Keys)
             {
-                GrassPlacer.GenerateForChunk(coord);
+                GrassGenerator.GenerateForChunk(coord);
             }
         }
 
-        if (TreesEnabled && IsInstanceValid(TreePlacer))
+        if (TreesEnabled && IsInstanceValid(TreeGenerator))
         {
-            TreePlacer.ClearAll();
+            TreeGenerator.ClearAll();
             foreach (var coord in _chunks.Keys)
             {
-                TreePlacer.GenerateForChunk(coord);
+                TreeGenerator.GenerateForChunk(coord);
             }
         }
     }

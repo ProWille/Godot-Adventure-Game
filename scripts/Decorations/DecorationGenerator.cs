@@ -8,7 +8,7 @@ public abstract partial class DecorationGenerator : Resource
 {
     [ExportGroup("Biome Density")]
 
-    [Export(PropertyHint.Range, "0, 50, 1, prefer_slider")]
+    [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
     public int ForestDensity { get; set; } = 10;
     [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
     public int GrasslandDensity { get; set; } = 100;
@@ -32,9 +32,9 @@ public abstract partial class DecorationGenerator : Resource
     public float MinHeightThreshold { get; set; } = 0.35f;
     [Export(PropertyHint.Range, "0.0f, 1.0f, 0.05f, prefer_slider")]
     public float MaxHeightThreshold { get; set; } = 0.65f;
-    [Export(PropertyHint.Range, "0.5f, 3.0f, 0.1f, prefer_slider")]
+    [Export(PropertyHint.Range, "0.5f, 10.0f, 0.1f, prefer_slider")]
     public float MinScale { get; set; } = 0.8f;
-    [Export(PropertyHint.Range, "0.5f, 3.0f, 0.1f, prefer_slider")]
+    [Export(PropertyHint.Range, "0.5f, 10.0f, 0.1f, prefer_slider")]
     public float MaxScale { get; set; } = 1.5f;
     [Export(PropertyHint.Range, "-5.0f, 5.0f, 0.1f, prefer_slider")]
     public float HeightOffset { get; set; } = 0.0f;

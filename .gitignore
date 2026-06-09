@@ -19,7 +19,6 @@ mono_crash.*.json
 
 # User-specific ignores
 /builds/
-/assets/
 /addons/
 /data/
 /demo/
@@ -28,3 +27,11 @@ mono_crash.*.json
 .opencode/
 .superpowers/
 *.old
+
+# Third-party asset packs (not tracked)
+/assets/AnimalsFree/
+/assets/FantasyFree/
+/assets/PP_FreeLowPolyNaturePack_v3.0_Fbx_files_unique/
+/assets/StylizedGrass/
+/assets/Stylized_Nature_MegaKit/
+/assets/VertexRageStudio/

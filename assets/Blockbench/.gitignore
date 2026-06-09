@@ -1,0 +1,15 @@
+# Generated files from Blockbench exports — don't track
+*.fbx
+*.fbx.import
+*.glb
+*.glb.import
+*.gltf
+*.gltf.import
+
+# Stale extracted textures (no extension)
+tree/tree_bark
+tree/tree_foliage
+
+# Old pixel-art texture and import
+tree/tree_texture.png
+tree/tree_texture.png.import

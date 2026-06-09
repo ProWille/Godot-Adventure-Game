@@ -1,9 +1,0 @@
-[gd_resource type="Resource" format=3 uid="uid://cya0kkp5j7ujm"]
-
-[ext_resource type="Script" uid="uid://rbnx8dfclf8s" path="res://scripts/Decorations/Tress/TreePlacer.cs" id="1_7tvel"]
-
-[resource]
-script = ExtResource("1_7tvel")
-ForestDensity = 30
-GrasslandDensity = 0
-DensityThreshold = 0.5

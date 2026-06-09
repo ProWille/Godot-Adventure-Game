@@ -4,5 +4,7 @@
 
 [resource]
 script = ExtResource("1_u2avk")
-MinScale = 2.0
-MaxScale = 3.0
+ForestDensity = 50
+GrasslandDensity = 200
+MinScale = 5.0
+MaxScale = 10.0
