@@ -82,114 +82,49 @@ public partial class TerrainController : Node3D
     private readonly Dictionary<Vector2I, MeshInstance3D> _waterMeshes = [];
     private readonly object _chunkLock = new();
 
-    private bool ValidateNoiseSettings()
+    private static bool ValidateFields(params (GodotObject field, string name)[] fields)
     {
-        if (!IsInstanceValid(TerrainNoise))
+        foreach (var (field, name) in fields)
         {
-            GD.PrintErr($"{Name}._Ready : TerrainNoise is not assigned.");
-            return false;
+            if (!IsInstanceValid(field))
+            {
+                GD.PushError($"{name} is not assigned.");
+                return false;
+            }
         }
-        if (!IsInstanceValid(ErosionNoise))
-        {
-            GD.PrintErr($"{Name}._Ready : ErosionNoise is not assigned.");
-            return false;
-        }
-        if (!IsInstanceValid(RnrNoise))
-        {
-            GD.PrintErr($"{Name}._Ready : RnrNoise is not assigned.");
-            return false;
-        }
-        if (!IsInstanceValid(TemperatureNoise))
-        {
-            GD.PrintErr($"{Name}._Ready : TemperatureNoise is not assigned.");
-            return false;
-        }
-        if (!IsInstanceValid(MoistureNoise))
-        {
-            GD.PrintErr($"{Name}._Ready : MoistureNoise is not assigned.");
-            return false;
-        }
-        if (!IsInstanceValid(DetailNoise))
-        {
-            GD.PrintErr($"{Name}._Ready : DetailNoise is not assigned.");
-            return false;
-        }
-        if (!IsInstanceValid(ClutterNoise))
-        {
-            GD.PrintErr($"{Name}._Ready : ClutterNoise is not assigned.");
-            return false;
-        }
-
         return true;
     }
 
-    private bool ValidateBiomeGenerators()
+    private bool ValidateNoiseSettings() => ValidateFields(
+        (TerrainNoise, nameof(TerrainNoise)),
+        (ErosionNoise, nameof(ErosionNoise)),
+        (RnrNoise, nameof(RnrNoise)),
+        (TemperatureNoise, nameof(TemperatureNoise)),
+        (MoistureNoise, nameof(MoistureNoise)),
+        (DetailNoise, nameof(DetailNoise)),
+        (ClutterNoise, nameof(ClutterNoise))
+    );
+
+    private bool ValidateBiomeGenerators() => ValidateFields(
+        (OceanGenerator, nameof(OceanGenerator)),
+        (PlainsGenerator, nameof(PlainsGenerator)),
+        (ForestGenerator, nameof(ForestGenerator)),
+        (MountainGenerator, nameof(MountainGenerator))
+    );
+
+    private void InitializeDecorationGenerators(params (DecorationGenerator generator, bool enabled, string name)[] fields)
     {
-        if (!IsInstanceValid(OceanGenerator))
+        foreach (var (generator, enabled, name) in fields)
         {
-            GD.PrintErr($"{Name}._Ready : OceanGenerator is not assigned.");
-            return false;
-        }
-        if (!IsInstanceValid(PlainsGenerator))
-        {
-            GD.PrintErr($"{Name}._Ready : PlainsGenerator is not assigned.");
-            return false;
-        }
-        if (!IsInstanceValid(ForestGenerator))
-        {
-            GD.PrintErr($"{Name}._Ready : ForestGenerator is not assigned.");
-            return false;
-        }
-        if (!IsInstanceValid(MountainGenerator))
-        {
-            GD.PrintErr($"{Name}._Ready : MountainGenerator is not assigned.");
-            return false;
-        }
-
-        return true;
-    }
-
-    private BiomeGenerator GetBiomeGenerator(BiomeType biome)
-    {
-        return biome switch
-        {
-            BiomeType.Ocean => OceanGenerator,
-            BiomeType.Grassland => PlainsGenerator,
-            BiomeType.Forest => ForestGenerator,
-            BiomeType.Mountain => MountainGenerator,
-            _ => ForestGenerator
-        };
-    }
-
-    private void InitializeGrassPlacer()
-    {
-        if (!IsInstanceValid(GrassGenerator))
-        {
-            GD.PrintErr($"{Name}._Ready : GrassGenerator is not assigned.");
-            return;
-        }
-
-        GrassGenerator.Initialize(this);
-
-        foreach (var coord in _chunks.Keys)
-        {
-            GrassGenerator.GenerateForChunk(coord);
-        }
-    }
-
-    private void InitializeTreePlacer()
-    {
-        if (!IsInstanceValid(TreeGenerator))
-        {
-            GD.PrintErr($"{Name}._Ready : TreeGenerator is not assigned.");
-            return;
-        }
-
-        TreeGenerator.Initialize(this);
-
-        foreach (var coord in _chunks.Keys)
-        {
-            TreeGenerator.GenerateForChunk(coord);
+            if (!enabled) continue;
+            if (!IsInstanceValid(generator))
+            {
+                GD.PushWarning($"{name} is not assigned.");
+                continue;
+            }
+            generator.Initialize(this);
+            foreach (var coord in _chunks.Keys)
+                generator.GenerateForChunk(coord);
         }
     }
 
@@ -198,13 +133,7 @@ public partial class TerrainController : Node3D
         _chunkContainer = new Node3D { Name = "ChunkContainer" };
         AddChild(_chunkContainer);
 
-        if (!ValidateNoiseSettings())
-        {
-            QueueFree();
-            return;
-        }
-
-        if (!ValidateBiomeGenerators())
+        if (!ValidateNoiseSettings() || !ValidateBiomeGenerators())
         {
             QueueFree();
             return;
@@ -213,16 +142,14 @@ public partial class TerrainController : Node3D
         _player = GetTree().CurrentScene?.GetNodeOrNull<Node3D>("Player");
         if (!IsInstanceValid(_player))
         {
-            GD.PrintErr($"{Name}.{nameof(_Ready)} : Player node not found in current scene.");
+            GD.PushError("Player node not found in current scene.");
             QueueFree();
             return;
         }
 
-        if (GrassEnabled)
-            InitializeGrassPlacer();
-
-        if (TreesEnabled)
-            InitializeTreePlacer();
+        InitializeDecorationGenerators((TreeGenerator, TreesEnabled, nameof(TreeGenerator)),
+                                       (GrassGenerator, GrassEnabled, nameof(GrassGenerator)),
+                                       (StoneGenerator, StonesEnabled, nameof(StoneGenerator)));
 
         CurrentChunkCoord = GetChunkCoord(_player.GlobalPosition);
         LoadChunksAroundPlayer();
@@ -292,9 +219,9 @@ public partial class TerrainController : Node3D
         var biome = GetBiome(moisture, temperature, normalizedHeight);
         var generator = GetBiomeGenerator(biome);
 
-        var biomeHeight = generator.HeightmapNoise.GetNoise2D(worldX, worldZ) * Height * 0.2f;
-        var erosionWeight = generator.ErosionWeight?.Sample(0.5f) ?? 1.0f;
-        var detailWeight = generator.DetailWeight?.Sample(0.5f) ?? 1.0f;
+        var biomeHeight = (generator.HeightmapNoise?.GetNoise2D(worldX, worldZ) ?? 0.0f) * Height * 0.2f;
+        var erosionWeight = generator.ErosionWeight?.Sample(normalizedHeight) ?? 1.0f;
+        var detailWeight = generator.DetailWeight?.Sample(normalizedHeight) ?? 1.0f;
 
         var height = baseHeight + biomeHeight;
         height *= 1.0f - Mathf.Max(0.0f, ErosionNoise.GetNoise2D(worldX, worldZ)) * erosionWeight * 0.5f;
@@ -375,6 +302,18 @@ public partial class TerrainController : Node3D
         return (biome, biome, 0.0f);
     }
 
+    private BiomeGenerator GetBiomeGenerator(BiomeType biome)
+    {
+        return biome switch
+        {
+            BiomeType.Ocean => OceanGenerator,
+            BiomeType.Grassland => PlainsGenerator,
+            BiomeType.Forest => ForestGenerator,
+            BiomeType.Mountain => MountainGenerator,
+            _ => ForestGenerator
+        };
+    }
+
     private void UpdateChunksForPosition(Vector3 position)
     {
         var newChunkCoord = GetChunkCoord(position.X, position.Z);
@@ -445,6 +384,15 @@ public partial class TerrainController : Node3D
         thread.Start();
     }
 
+    private static void TryGenerateDecorations(Vector2I coord, params (DecorationGenerator generator, bool enabled)[] fields)
+    {
+        foreach (var (generator, enabled) in fields)
+        {    
+            if (!enabled || !IsInstanceValid(generator)) continue;
+            generator.GenerateForChunk(coord);
+        }
+    }
+
     private void AssignChunkMesh(Vector2I coord, ArrayMesh mesh, bool hasOcean)
     {
         lock (_chunkLock)
@@ -454,19 +402,10 @@ public partial class TerrainController : Node3D
             chunk.Mesh = mesh;
         }
 
-        PlaceDecorations(coord, hasOcean);
-    }
-
-    private void PlaceDecorations(Vector2I coord, bool hasOcean)
-    {
         if (hasOcean && IsInstanceValid(WaterTemplate))
             CreateWaterMesh(coord);
 
-        if (GrassEnabled && IsInstanceValid(GrassGenerator))
-            GrassGenerator.GenerateForChunk(coord);
-
-        if (TreesEnabled && IsInstanceValid(TreeGenerator))
-            TreeGenerator.GenerateForChunk(coord);
+        TryGenerateDecorations(coord, (TreeGenerator, TreesEnabled), (GrassGenerator, GrassEnabled), (StoneGenerator, StonesEnabled));
     }
 
     private void CreateWaterMesh(Vector2I coord)
@@ -542,6 +481,15 @@ public partial class TerrainController : Node3D
         return (arrayMesh, hasOcean);
     }
 
+    private static void TryRemoveDecorations(Vector2I coord, params (DecorationGenerator generator, bool enabled)[] fields)
+    {
+        foreach (var (generator, enabled) in fields)
+        {    
+            if (!enabled || !IsInstanceValid(generator)) continue;
+            generator.RemoveForChunk(coord);
+        }
+    }
+
     private void RemoveChunk(Vector2I coord)
     {
         if (_chunks.TryGetValue(coord, out var chunk))
@@ -556,11 +504,18 @@ public partial class TerrainController : Node3D
             _waterMeshes.Remove(coord);
         }
 
-        if (GrassEnabled && IsInstanceValid(GrassGenerator))
-            GrassGenerator.RemoveForChunk(coord);
+        TryRemoveDecorations(coord, (TreeGenerator, TreesEnabled), (GrassGenerator, GrassEnabled), (StoneGenerator, StonesEnabled));
+    }
 
-        if (TreesEnabled && IsInstanceValid(TreeGenerator))
-            TreeGenerator.RemoveForChunk(coord);
+    private void TryRegenerateDecorations(params (DecorationGenerator generator, bool enabled)[] fields)
+    {
+        foreach (var (generator, enabled) in fields)
+        {
+            if (!enabled || !IsInstanceValid(generator)) continue;
+            generator.ClearAll();
+            foreach (var coord in _chunks.Keys)
+                generator.GenerateForChunk(coord);
+        }
     }
 
     private void RegenerateAllChunks()
@@ -616,22 +571,6 @@ public partial class TerrainController : Node3D
             }
         }
 
-        if (GrassEnabled && IsInstanceValid(GrassGenerator))
-        {
-            GrassGenerator.ClearAll();
-            foreach (var coord in _chunks.Keys)
-            {
-                GrassGenerator.GenerateForChunk(coord);
-            }
-        }
-
-        if (TreesEnabled && IsInstanceValid(TreeGenerator))
-        {
-            TreeGenerator.ClearAll();
-            foreach (var coord in _chunks.Keys)
-            {
-                TreeGenerator.GenerateForChunk(coord);
-            }
-        }
+        TryRegenerateDecorations((TreeGenerator, TreesEnabled), (GrassGenerator, GrassEnabled), (StoneGenerator, StonesEnabled));
     }
 }

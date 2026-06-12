@@ -54,6 +54,7 @@ public abstract partial class DecorationGenerator : Resource
 
     public virtual void Initialize(TerrainController terrain)
     {
+        ClearAll();
         _terrain = terrain;
         _placementNoise = new FastNoiseLite
         {
@@ -127,7 +128,8 @@ public abstract partial class DecorationGenerator : Resource
         {
             foreach (var instance in _instances.Values)
             {
-                instance.QueueFree();
+                if (IsInstanceValid(instance))
+                    instance.QueueFree();
             }
             _instances.Clear();
         }

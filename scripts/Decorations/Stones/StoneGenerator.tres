@@ -4,4 +4,9 @@
 
 [resource]
 script = ExtResource("1_o7ru4")
-ForestDensity = 25
+ForestDensity = 30
+GrasslandDensity = 30
+DensityThreshold = 0.3
+PlacementFrequency = 0.3
+MinScale = 1.0
+MaxScale = 3.0

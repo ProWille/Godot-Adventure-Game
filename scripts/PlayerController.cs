@@ -20,13 +20,13 @@ public partial class PlayerController : CharacterBody3D
         _camera = GetNodeOrNull<Camera3D>("CameraPivot/Camera3D");
         if (!IsInstanceValid(_camera))
         {
-            GD.PrintErr($"{Name}.{nameof(_Ready)} : Camera3D node not found in current node.");
+            GD.PushError("Camera3D node not found in current node.");
         }
 
         _terrainController = GetTree().CurrentScene?.GetNodeOrNull<TerrainController>("TerrainController");
         if (!IsInstanceValid(_terrainController))
         {
-            GD.PrintErr($"{Name}.{nameof(_Ready)} : TerrainController not found in current scene.");
+            GD.PushError("TerrainController not found in current scene.");
         }
     }
 

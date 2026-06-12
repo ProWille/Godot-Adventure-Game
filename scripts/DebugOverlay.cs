@@ -13,7 +13,7 @@ public partial class DebugOverlay : CanvasLayer
         _debugLabel = GetNodeOrNull<Label>("DebugLabel");
         if (!IsInstanceValid(_debugLabel))
         {
-            GD.PrintErr($"{Name}.{nameof(_Ready)} : DebugLabel not found in current node.");
+            GD.PushError("DebugLabel not found in current node.");
             return;
         }
 
