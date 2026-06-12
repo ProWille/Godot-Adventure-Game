@@ -73,10 +73,18 @@ public partial class TerrainController : Node3D
     [Export] public MeshInstance3D StoneTemplate { get; set; }
     [Export] public bool StonesEnabled { get; set; } = true;
 
+    [ExportGroup("Player Settings")]
+    [Export] public Node3D Player { get; set; }
+    [Export] public Node3D Camera { get; set; }
+    [Export] public bool IsPlayerActive { get; set; } = true;
+
     public Vector2I CurrentChunkCoord { get; private set; }
 
     private Node3D _chunkContainer;
-    private Node3D _player;
+
+    public Node3D ActivePlayer => IsPlayerActive ? Player : Camera;
+    private Camera3D PlayerCam => Player?.GetNodeOrNull<Camera3D>("CameraPivot/Camera3D");
+    private Camera3D FreeCam => Camera as Camera3D;
 
     private readonly Dictionary<Vector2I, MeshInstance3D> _chunks = [];
     private readonly Dictionary<Vector2I, MeshInstance3D> _waterMeshes = [];
@@ -128,6 +136,21 @@ public partial class TerrainController : Node3D
         }
     }
 
+    private void SetActivePlayer(bool player)
+    {
+        IsPlayerActive = player;
+
+        if (IsInstanceValid(PlayerCam))
+            PlayerCam.Current = IsPlayerActive;
+        if (IsInstanceValid(FreeCam))
+            FreeCam.Current = !IsPlayerActive;
+
+        if (IsInstanceValid(Player))
+            Player.ProcessMode = IsPlayerActive ? ProcessModeEnum.Inherit : ProcessModeEnum.Disabled;
+        if (IsInstanceValid(Camera))
+            Camera.ProcessMode = !IsPlayerActive ? ProcessModeEnum.Inherit : ProcessModeEnum.Disabled;
+    }
+
     public override void _Ready()
     {
         _chunkContainer = new Node3D { Name = "ChunkContainer" };
@@ -139,28 +162,30 @@ public partial class TerrainController : Node3D
             return;
         }
 
-        _player = GetTree().CurrentScene?.GetNodeOrNull<Node3D>("Player");
-        if (!IsInstanceValid(_player))
+        if (!IsInstanceValid(Player) && !IsInstanceValid(Camera))
         {
-            GD.PushError("Player node not found in current scene.");
+            GD.PushError("Player node and Camera node are not assigned.");
             QueueFree();
             return;
         }
+
+        SetActivePlayer(IsPlayerActive);
 
         InitializeDecorationGenerators((TreeGenerator, TreesEnabled, nameof(TreeGenerator)),
                                        (GrassGenerator, GrassEnabled, nameof(GrassGenerator)),
                                        (StoneGenerator, StonesEnabled, nameof(StoneGenerator)));
 
-        CurrentChunkCoord = GetChunkCoord(_player.GlobalPosition);
+        CurrentChunkCoord = GetChunkCoord(ActivePlayer.GlobalPosition);
         LoadChunksAroundPlayer();
     }
 
     public override void _Process(double delta)
     {
-        if (IsInstanceValid(_player))
-        {
-            UpdateChunksForPosition(_player.GlobalPosition);
-        }
+        if (Input.IsActionJustPressed("toggle_player"))
+            SetActivePlayer(!IsPlayerActive);
+
+        if (IsInstanceValid(ActivePlayer))
+            UpdateChunksForPosition(ActivePlayer.GlobalPosition);
     }
 
     public Vector2I GetChunkCoord(float worldX, float worldZ)
