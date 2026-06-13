@@ -40,8 +40,11 @@ public partial class CameraController : Camera3D
 
         if (@event is InputEventKey key && key.Pressed)
         {
-            if (key.Keycode == Key.Space)
+            if (key.Keycode == Key.R)
                 GetTree().ReloadCurrentScene();
+
+            else if (key.Keycode == Key.X)
+                GetTree().Quit();
 
             else if (key.Keycode == Key.Escape)
                 Input.MouseMode = Input.MouseModeEnum.Visible;
