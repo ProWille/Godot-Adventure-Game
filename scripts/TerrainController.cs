@@ -18,7 +18,6 @@ public enum BiomeType
 public partial class TerrainController : Node3D
 {
     [ExportGroup("Noise Settings")]
-
     [Export] public FastNoiseLite TerrainNoise { get; set; }
     [Export] public FastNoiseLite ErosionNoise { get; set; }
     [Export] public FastNoiseLite RnrNoise { get; set; }
@@ -28,14 +27,12 @@ public partial class TerrainController : Node3D
     [Export] public FastNoiseLite ClutterNoise { get; set; }
 
     [ExportGroup("Biome Generators")]
-
     [Export] public BiomeGenerator OceanGenerator { get; set; }
     [Export] public BiomeGenerator PlainsGenerator { get; set; }
     [Export] public BiomeGenerator ForestGenerator { get; set; }
     [Export] public BiomeGenerator MountainGenerator { get; set; }
 
     [ExportGroup("Chunk Settings")]
-
     [Export] public MeshInstance3D ChunkTemplate { get; set; }
     [Export] public MeshInstance3D WaterTemplate { get; set; }
     [Export] public int ChunkSize { get; set; } = 64;
@@ -51,7 +48,6 @@ public partial class TerrainController : Node3D
     public float PlayerOffset { get; set; } = 0.0f;
 
     [ExportGroup("Biome Thresholds")]
-
     [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
     public float OceanHeightThreshold { get; set; } = 0.4f;
     [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
@@ -62,7 +58,6 @@ public partial class TerrainController : Node3D
     public float ForestMoistureThreshold { get; set; } = 0.6f;
 
     [ExportGroup("Decoration Settings")]
-
     [Export] public DecorationGenerator TreeGenerator { get; set; }
     [Export] public MeshInstance3D TreeTemplate { get; set; }
     [Export] public bool TreesEnabled { get; set; } = true;
@@ -79,16 +74,24 @@ public partial class TerrainController : Node3D
     [Export] public bool IsPlayerActive { get; set; } = true;
 
     public Vector2I CurrentChunkCoord { get; private set; }
-
-    private Node3D _chunkContainer;
-
     public Node3D ActivePlayer => IsPlayerActive ? Player : Camera;
+
     private Camera3D PlayerCam => Player?.GetNodeOrNull<Camera3D>("CameraPivot/Camera3D");
     private Camera3D FreeCam => Camera as Camera3D;
+    private Node3D _chunkContainer;
 
     private readonly Dictionary<Vector2I, MeshInstance3D> _chunks = [];
     private readonly Dictionary<Vector2I, MeshInstance3D> _waterMeshes = [];
     private readonly object _chunkLock = new();
+
+    public float GetWaterLevel() => (OceanHeightThreshold * 2.0f - 1.0f) * Height;
+    public float GetMoisture(float worldX, float worldZ) => (MoistureNoise.GetNoise2D(worldX, worldZ) + 1.0f) * 0.5f;
+    public float GetTemperature(float worldX, float worldZ) => (TemperatureNoise.GetNoise2D(worldX, worldZ) + 1.0f) * 0.5f;
+    public float GetNormalizedHeight(float baseHeight) => (baseHeight / Height + 1.0f) * 0.5f;
+    public float GetNormalizedHeight(float worldX, float worldZ) => GetNormalizedHeight(GetBaseHeight(worldX, worldZ));
+    public Vector2I GetChunkCoord(float worldX, float worldZ) => new((int)Math.Floor(worldX / ChunkSize), (int)Math.Floor(worldZ / ChunkSize));
+    public Vector2I GetChunkCoord(Vector3 position) => GetChunkCoord(position.X, position.Z);
+    public Vector3 GetWorldCoord(Vector2I coord) => new(coord.X * ChunkSize + ChunkSize / 2, 0, coord.Y * ChunkSize + ChunkSize / 2);
 
     private static bool ValidateFields(params (GodotObject field, string name)[] fields)
     {
@@ -188,50 +191,11 @@ public partial class TerrainController : Node3D
             UpdateChunksForPosition(ActivePlayer.GlobalPosition);
     }
 
-    public Vector2I GetChunkCoord(float worldX, float worldZ)
-    {
-        return new Vector2I((int)Math.Floor(worldX / ChunkSize), (int)Math.Floor(worldZ / ChunkSize));
-    }
-
-    public Vector2I GetChunkCoord(Vector3 position)
-    {
-        return GetChunkCoord(position.X, position.Z);
-    }
-
-    public Vector3 GetWorldCoord(Vector2I coord)
-    {
-        var worldCoord = coord * ChunkSize;
-        var worldOffset = ChunkSize / 2;
-        return new Vector3I(worldCoord.X + worldOffset, 0, worldCoord.Y + worldOffset);
-    }
-
-    public float GetMoisture(float worldX, float worldZ)
-    {
-        return (MoistureNoise.GetNoise2D(worldX, worldZ) + 1.0f) / 2.0f;
-    }
-
-    public float GetTemperature(float worldX, float worldZ)
-    {
-        return (TemperatureNoise.GetNoise2D(worldX, worldZ) + 1.0f) / 2.0f;
-    }
-
     public float GetBaseHeight(float worldX, float worldZ)
     {
         var continental = TerrainNoise.GetNoise2D(worldX, worldZ);
         var rivers = RnrNoise.GetNoise2D(worldX, worldZ);
         return Mathf.Clamp(continental + rivers, -1.0f, 1.0f) * Height;
-    }
-
-    public float GetNormalizedHeight(float worldX, float worldZ)
-    {
-        var baseHeight = GetBaseHeight(worldX, worldZ);
-        return GetNormalizedHeight(baseHeight);
-    }
-
-    public float GetNormalizedHeight(float baseHeight)
-    {
-        var normalizedHeight = (baseHeight / Height + 1.0f) * 0.5f;
-        return normalizedHeight;
     }
 
     public float GetHeightmap(float worldX, float worldZ)
@@ -255,6 +219,49 @@ public partial class TerrainController : Node3D
         return height;
     }
 
+    public float GetBlendedHeightmap(float worldX, float worldZ)
+    {
+        var baseHeight = GetBaseHeight(worldX, worldZ);
+
+        var normalizedHeight = GetNormalizedHeight(baseHeight);
+        var moisture = GetMoisture(worldX, worldZ);
+        var temperature = GetTemperature(worldX, worldZ);
+        var (primaryBiome, secondaryBiome, blendFactor) = GetBiomeWithBlend(moisture, temperature, normalizedHeight);
+
+        var primaryGenerator = GetBiomeGenerator(primaryBiome);
+        var primaryBiomeHeight = (primaryGenerator.HeightmapNoise?.GetNoise2D(worldX, worldZ) ?? 0.0f) * Height * 0.2f;
+        var primaryErosionWeight = primaryGenerator.ErosionWeight?.Sample(normalizedHeight) ?? 1.0f;
+        var primaryDetailWeight = primaryGenerator.DetailWeight?.Sample(normalizedHeight) ?? 1.0f;
+
+        float biomeHeight;
+        float erosionWeight;
+        float detailWeight;
+
+        if (blendFactor > 0.001f && secondaryBiome != primaryBiome)
+        {
+            var secondaryGenerator = GetBiomeGenerator(secondaryBiome);
+            var secondaryBiomeHeight = (secondaryGenerator.HeightmapNoise?.GetNoise2D(worldX, worldZ) ?? 0.0f) * Height * 0.2f;
+            var secondaryErosionWeight = secondaryGenerator.ErosionWeight?.Sample(normalizedHeight) ?? 1.0f;
+            var secondaryDetailWeight = secondaryGenerator.DetailWeight?.Sample(normalizedHeight) ?? 1.0f;
+
+            biomeHeight = Mathf.Lerp(primaryBiomeHeight, secondaryBiomeHeight, blendFactor);
+            erosionWeight = Mathf.Lerp(primaryErosionWeight, secondaryErosionWeight, blendFactor);
+            detailWeight = Mathf.Lerp(primaryDetailWeight, secondaryDetailWeight, blendFactor);
+        }
+        else
+        {
+            biomeHeight = primaryBiomeHeight;
+            erosionWeight = primaryErosionWeight;
+            detailWeight = primaryDetailWeight;
+        }
+
+        var height = baseHeight + biomeHeight;
+        height *= 1.0f - Mathf.Max(0.0f, ErosionNoise.GetNoise2D(worldX, worldZ)) * erosionWeight * 0.5f;
+        height += DetailNoise.GetNoise2D(worldX, worldZ) * detailWeight * 0.1f;
+
+        return height;
+    }
+
     public Vector3 GetNormal(float worldX, float worldZ)
     {
         var epsilon = (float)ChunkSize / Resolution;
@@ -267,14 +274,25 @@ public partial class TerrainController : Node3D
         return normal.Normalized();
     }
 
+    private Vector3 GetBlendedNormal(float worldX, float worldZ)
+    {
+        var epsilon = (float)ChunkSize / Resolution;
+        var normal = new Vector3(
+            (GetBlendedHeightmap(worldX + epsilon, worldZ) - GetBlendedHeightmap(worldX - epsilon, worldZ)) / (2.0f * epsilon),
+            1.0f,
+            (GetBlendedHeightmap(worldX, worldZ + epsilon) - GetBlendedHeightmap(worldX, worldZ - epsilon)) / (2.0f * epsilon)
+        );
+
+        return normal.Normalized();
+    }
+
     public BiomeType GetBiome(float worldX, float worldZ)
     {
         var moisture = GetMoisture(worldX, worldZ);
         var temperature = GetTemperature(worldX, worldZ);
-        var height = GetBaseHeight(worldX, worldZ);
-        var normalizedHeight = (height / Height + 1.0f) / 2.0f;
+        var height = GetNormalizedHeight(worldX, worldZ);
 
-        return GetBiome(moisture, temperature, normalizedHeight);
+        return GetBiome(moisture, temperature, height);
     }
 
     public BiomeType GetBiome(float moisture, float temperature, float height)
@@ -307,7 +325,8 @@ public partial class TerrainController : Node3D
         {
             var dist = height - MountainHeightThreshold;
             var blendFactor = 1.0f - Math.Abs(dist) / edge;
-            return (BiomeType.Mountain, BiomeType.Forest, blendFactor);
+            var subMountainBiome = moisture > ForestMoistureThreshold ? BiomeType.Forest : BiomeType.Grassland;
+            return (BiomeType.Mountain, subMountainBiome, blendFactor);
         }
 
         if (moisture < GrasslandMoistureThreshold + edge && moisture > GrasslandMoistureThreshold - edge)
@@ -471,10 +490,10 @@ public partial class TerrainController : Node3D
             var worldX = position.X + vertex.X;
             var worldZ = position.Z + vertex.Z;
 
-            var heightValue = GetHeightmap(worldX, worldZ);
+            var heightValue = GetBlendedHeightmap(worldX, worldZ);
             vertex.Y = heightValue;
 
-            var normal = GetNormal(worldX, worldZ);
+            var normal = GetBlendedNormal(worldX, worldZ);
             var tangent = normal.Cross(Vector3.Up);
 
             var normalizedHeight = (heightValue / Height + 1.0f) / 2.0f;

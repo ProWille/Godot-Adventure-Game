@@ -4,10 +4,12 @@
 
 [resource]
 script = ExtResource("1_7tvel")
-ForestDensity = 30
-GrasslandDensity = 0
+ForestDensity = 20
+GrasslandDensity = 5
 DensityThreshold = 0.6
-PlacementFrequency = 0.25
+DensityNoiseScale = 100
+DensityNoiseAmplitude = 10
+PlacementFrequency = 0.2
 MinScale = 1.0
-MaxScale = 3.0
+MaxScale = 5.0
 HeightOffset = -0.5

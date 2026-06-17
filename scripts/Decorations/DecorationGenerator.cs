@@ -152,9 +152,7 @@ public abstract partial class DecorationGenerator : Resource
                 var worldX = offsetX + x;
                 var worldZ = offsetZ + z;
 
-                var height = _terrain.GetHeightmap(worldX, worldZ);
-                var normalizedHeight = (height / _terrain.Height + 1.0f) / 2.0f;
-
+                var normalizedHeight = _terrain.GetNormalizedHeight(worldX, worldZ);
                 if (normalizedHeight < MinHeightThreshold || normalizedHeight > MaxHeightThreshold)
                     continue;
 
@@ -169,6 +167,10 @@ public abstract partial class DecorationGenerator : Resource
                 var normalizedNoise = (noiseValue + 1.0f) * 0.5f;
                 var density = GetBiomeDensity(biome);
                 var threshold = 1.0f - DensityThreshold * Math.Min(density * 0.02f, 1.0f);
+
+                var height = _terrain.GetBlendedHeightmap(worldX, worldZ);
+                if (height < _terrain.GetWaterLevel())
+                    continue;
 
                 if (normalizedNoise > threshold)
                     positions.Add(new Vector3(worldX, height, worldZ));

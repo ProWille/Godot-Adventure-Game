@@ -8,6 +8,8 @@ public partial class TreePlacer : DecorationGenerator
 {
     protected override string InstanceName => "Tree";
 
+    protected override bool IsValidBiome(BiomeType biome) => biome == BiomeType.Forest || biome == BiomeType.Grassland;
+
     public override void Initialize(TerrainController terrain)
     {
         base.Initialize(terrain);
@@ -30,18 +32,11 @@ public partial class TreePlacer : DecorationGenerator
         var centerX = coord.X * chunkSize + chunkSize / 2f;
         var centerZ = coord.Y * chunkSize + chunkSize / 2f;
 
-        var centerHeight = _terrain.GetHeightmap(centerX, centerZ);
-        var normalizedCenterHeight = (centerHeight / _terrain.Height + 1.0f) / 2.0f;
-
-        if (normalizedCenterHeight < MinHeightThreshold || normalizedCenterHeight > MaxHeightThreshold)
+        var normalizedHeight = _terrain.GetNormalizedHeight(centerX, centerZ);
+        if (normalizedHeight < MinHeightThreshold || normalizedHeight > MaxHeightThreshold)
             return false;
 
         var biome = _terrain.GetBiome(centerX, centerZ);
-        return biome == BiomeType.Forest;
-    }
-
-    protected override bool IsValidBiome(BiomeType biome)
-    {
         return biome == BiomeType.Forest;
     }
 
