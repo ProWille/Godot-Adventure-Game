@@ -33,7 +33,7 @@ public partial class TerrainController : Node3D
     [Export] public BiomeGenerator MountainGenerator { get; set; }
 
     [ExportGroup("Chunk Settings")]
-    [Export] public MeshInstance3D ChunkTemplate { get; set; }
+    [Export] public ShaderMaterial ChunkMaterial { get; set; }
     [Export] public MeshInstance3D WaterTemplate { get; set; }
     [Export] public int ChunkSize { get; set; } = 64;
     [Export(PropertyHint.Range, "0, 24, 1, prefer_slider")]
@@ -409,9 +409,9 @@ public partial class TerrainController : Node3D
     {
         var worldCoord = GetWorldCoord(coord);
 
-        var chunkMesh = IsInstanceValid(ChunkTemplate)
-            ? ChunkTemplate.Duplicate() as MeshInstance3D
-            : new MeshInstance3D();
+        var chunkMesh = new MeshInstance3D();
+        if (IsInstanceValid(ChunkMaterial))
+            chunkMesh.MaterialOverride = ChunkMaterial;
 
         chunkMesh.Name = $"Chunk_{coord.X}_{coord.Y}";
         chunkMesh.Position = worldCoord;

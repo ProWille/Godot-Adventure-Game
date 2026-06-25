@@ -49,7 +49,7 @@ fractal_octaves = 4
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_dp3eg"]
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_tbgi4"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_qjw6e"]
 render_priority = 0
 shader = ExtResource("1_sugp2")
 shader_parameter/sand_texture = ExtResource("11_a8y0u")
@@ -60,7 +60,7 @@ shader_parameter/texture_scale = 10.0
 shader_parameter/use_textures = true
 shader_parameter/sand_color = Color(0.9, 0.76, 0.5, 1)
 shader_parameter/grass_color = Color(0.4, 0.8, 0.2, 1)
-shader_parameter/forest_color = Color(0.15, 0.45, 0.1, 1)
+shader_parameter/forest_color = Color(0.2, 0.6, 0.1, 1)
 shader_parameter/rock_color = Color(0.7, 0.7, 0.8, 1)
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_a8y0u"]
@@ -117,7 +117,7 @@ size = Vector2(64, 64)
 
 [node name="Sky" parent="." unique_id=184431804 instance=ExtResource("1_tipki")]
 
-[node name="TerrainController" type="Node3D" parent="." unique_id=1824529683 node_paths=PackedStringArray("ChunkTemplate", "WaterTemplate", "TreeTemplate", "GrassTemplate", "StoneTemplate", "Player", "Camera")]
+[node name="TerrainController" type="Node3D" parent="." unique_id=1824529683 node_paths=PackedStringArray("WaterTemplate", "TreeTemplate", "GrassTemplate", "StoneTemplate", "Player", "Camera")]
 script = ExtResource("2_jyhfs")
 TerrainNoise = SubResource("FastNoiseLite_eb6dy")
 ErosionNoise = SubResource("FastNoiseLite_jkv2x")
@@ -130,11 +130,10 @@ OceanGenerator = ExtResource("3_jkv2x")
 PlainsGenerator = ExtResource("4_jbj1t")
 ForestGenerator = ExtResource("3_a8y0u")
 MountainGenerator = ExtResource("6_muem4")
-ChunkTemplate = NodePath("TerrainTemplate")
+ChunkMaterial = SubResource("ShaderMaterial_qjw6e")
 WaterTemplate = NodePath("WaterTemplate")
 RenderDistance = 8
 Resolution = 16
-BiomeBlendWidth = 0.1
 PlayerOffset = 1.0
 MountainHeightThreshold = 0.8
 ForestMoistureThreshold = 0.4
@@ -146,11 +145,6 @@ StoneGenerator = ExtResource("9_0ld40")
 StoneTemplate = NodePath("StoneTemplate")
 Player = NodePath("../Player")
 Camera = NodePath("../Camera")
-
-[node name="TerrainTemplate" type="MeshInstance3D" parent="TerrainController" unique_id=2117551585]
-visible = false
-material_override = SubResource("ShaderMaterial_tbgi4")
-skeleton = NodePath("../..")
 
 [node name="GrassTemplate" type="MeshInstance3D" parent="TerrainController" unique_id=2043230620]
 visible = false
