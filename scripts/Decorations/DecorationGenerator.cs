@@ -6,6 +6,8 @@ namespace AdventureGame.Scripts;
 
 public abstract partial class DecorationGenerator : Resource
 {
+    [Export] public Mesh DecorationMesh { get; set; }
+
     [ExportGroup("Biome Density")]
 
     [Export(PropertyHint.Range, "0, 500, 1, prefer_slider")]
@@ -39,7 +41,6 @@ public abstract partial class DecorationGenerator : Resource
     [Export(PropertyHint.Range, "-5.0f, 5.0f, 0.1f, prefer_slider")]
     public float HeightOffset { get; set; } = 0.0f;
 
-    protected MeshInstance3D _template;
     protected TerrainController _terrain;
     protected FastNoiseLite _placementNoise;
 
@@ -61,11 +62,16 @@ public abstract partial class DecorationGenerator : Resource
             Seed = new Random().Next() * 1000,
             Frequency = PlacementFrequency
         };
+
+        if (!IsInstanceValid(DecorationMesh))
+        {
+            GD.PushWarning($"{InstanceName} {nameof(DecorationMesh)} is not assigned.");
+        }
     }
 
     public virtual void GenerateForChunk(Vector2I coord)
     {
-        if (!IsInstanceValid(_template))
+        if (!IsInstanceValid(DecorationMesh))
             return;
 
         var playerChunk = _terrain.CurrentChunkCoord;
@@ -135,7 +141,7 @@ public abstract partial class DecorationGenerator : Resource
         }
     }
 
-    protected List<Vector3> SamplePositions(Vector2I coord)
+    private List<Vector3> SamplePositions(Vector2I coord)
     {
         var chunkSize = _terrain.ChunkSize;
         var resolution = _terrain.Resolution;
@@ -180,13 +186,13 @@ public abstract partial class DecorationGenerator : Resource
         return positions;
     }
 
-    protected MultiMeshInstance3D CreateInstance(Vector2I coord, List<Vector3> positions)
+    private MultiMeshInstance3D CreateInstance(Vector2I coord, List<Vector3> positions)
     {
         var multiMesh = new MultiMesh
         {
             TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
             InstanceCount = positions.Count,
-            Mesh = _template.Mesh
+            Mesh = DecorationMesh
         };
 
         var random = new Random(coord.X * 10000 + coord.Y + RandomSeedBase);
@@ -216,7 +222,7 @@ public abstract partial class DecorationGenerator : Resource
         return newInstance;
     }
 
-    protected int GetBiomeDensity(BiomeType biome)
+    private int GetBiomeDensity(BiomeType biome)
     {
         return biome == BiomeType.Forest ? ForestDensity : GrasslandDensity;
     }

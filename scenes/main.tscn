@@ -16,9 +16,6 @@
 [ext_resource type="Texture2D" uid="uid://c7hukusiq4wi6" path="res://assets/Blockbench/terrain/grass_terrain_texture.png" id="11_jbj1t"]
 [ext_resource type="Texture2D" uid="uid://b3a5puaud8b3q" path="res://assets/Blockbench/terrain/rock_terrain_texture.png" id="12_dp3eg"]
 [ext_resource type="Script" uid="uid://cqy0doqb1pwrd" path="res://scripts/DebugOverlay.cs" id="12_eb6dy"]
-[ext_resource type="ArrayMesh" uid="uid://cl3wdtog51tkj" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Grass/GrassLumps/extracted/GrassLumpLargeC.GrassLumpLargeC_001.mesh" id="14_dp3eg"]
-[ext_resource type="ArrayMesh" uid="uid://dhhiw85djoevm" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Trees/GenericTrees/extracted/GenericTreeE.GenericTreeE_002.mesh" id="15_dp3eg"]
-[ext_resource type="ArrayMesh" uid="uid://bs0qpkrmov4ik" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Rocks/extracted/RockNormE.RockNormE_001.mesh" id="16_gqmmt"]
 [ext_resource type="PackedScene" uid="uid://dus5mvg748wnc" path="res://scenes/player.tscn" id="20_yc10j"]
 [ext_resource type="Resource" uid="uid://egkus3nsj3q5" path="res://scripts/Water/WaterGenerator.tres" id="21_wtrsc"]
 
@@ -63,15 +60,13 @@ shader_parameter/grass_color = Color(0.4, 0.8, 0.2, 1)
 shader_parameter/forest_color = Color(0.2, 0.6, 0.1, 1)
 shader_parameter/rock_color = Color(0.7, 0.7, 0.8, 1)
 
-[sub_resource type="CapsuleMesh" id="CapsuleMesh_a8y0u"]
-
 [sub_resource type="LabelSettings" id="LabelSettings_tipki"]
 
 [node name="Main" type="Node3D" unique_id=909135880]
 
 [node name="Sky" parent="." unique_id=184431804 instance=ExtResource("1_tipki")]
 
-[node name="TerrainController" type="Node3D" parent="." unique_id=1824529683 node_paths=PackedStringArray("TreeTemplate", "GrassTemplate", "StoneTemplate", "Player", "Camera")]
+[node name="TerrainController" type="Node3D" parent="." unique_id=1824529683 node_paths=PackedStringArray("Player", "Camera")]
 script = ExtResource("2_jyhfs")
 TerrainNoise = SubResource("FastNoiseLite_eb6dy")
 ErosionNoise = SubResource("FastNoiseLite_jkv2x")
@@ -92,33 +87,10 @@ MountainHeightThreshold = 0.8
 ForestMoistureThreshold = 0.4
 WaterGenerator = ExtResource("21_wtrsc")
 TreeGenerator = ExtResource("3_trceg")
-TreeTemplate = NodePath("TreeTemplate2")
 GrassGenerator = ExtResource("3_eb6dy")
-GrassTemplate = NodePath("GrassTemplate")
 StoneGenerator = ExtResource("9_0ld40")
-StoneTemplate = NodePath("StoneTemplate")
 Player = NodePath("../Player")
 Camera = NodePath("../Camera")
-
-[node name="GrassTemplate" type="MeshInstance3D" parent="TerrainController" unique_id=2043230620]
-visible = false
-mesh = ExtResource("14_dp3eg")
-skeleton = NodePath("../..")
-
-[node name="TreeTemplate" type="MeshInstance3D" parent="TerrainController" unique_id=1508519750]
-visible = false
-mesh = SubResource("CapsuleMesh_a8y0u")
-skeleton = NodePath("")
-
-[node name="StoneTemplate" type="MeshInstance3D" parent="TerrainController" unique_id=238518367]
-visible = false
-mesh = ExtResource("16_gqmmt")
-skeleton = NodePath("")
-
-[node name="TreeTemplate2" type="MeshInstance3D" parent="TerrainController" unique_id=2131376870]
-visible = false
-mesh = ExtResource("15_dp3eg")
-skeleton = NodePath("")
 
 [node name="Player" parent="." unique_id=1483300688 instance=ExtResource("20_yc10j")]
 

@@ -1,9 +1,11 @@
 [gd_resource type="Resource" format=3 uid="uid://ceepvn633kke6"]
 
+[ext_resource type="ArrayMesh" uid="uid://bv84lgt5uibvq" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Grass/GrassLumps/extracted/GrassLumpLargeHTall.GrassBladesH_007.mesh" id="1_q0v66"]
 [ext_resource type="Script" uid="uid://dsaobgewr0g4b" path="res://scripts/Decorations/Grass/GrassPlacer.cs" id="1_u2avk"]
 
 [resource]
 script = ExtResource("1_u2avk")
+DecorationMesh = ExtResource("1_q0v66")
 ForestDensity = 50
 GrasslandDensity = 200
 MinScale = 5.0

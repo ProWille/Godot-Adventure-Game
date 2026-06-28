@@ -10,13 +10,6 @@ public partial class TreePlacer : DecorationGenerator
 
     protected override bool IsValidBiome(BiomeType biome) => biome == BiomeType.Forest || biome == BiomeType.Grassland;
 
-    public override void Initialize(TerrainController terrain)
-    {
-        base.Initialize(terrain);
-
-        _template = terrain.TreeTemplate;
-    }
-
     protected override void OnPositionsSampled(Vector2I coord, ref List<Vector3> positions)
     {
         var adjustedDensity = ForestDensity + (int)(_placementNoise.GetNoise2D(coord.X * DensityNoiseScale, coord.Y * DensityNoiseScale) * DensityNoiseAmplitude);

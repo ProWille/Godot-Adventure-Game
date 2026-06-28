@@ -13,7 +13,13 @@ public partial class WaterGenerator : Resource
 
     public void Initialize(TerrainController terrain)
     {
+        ClearAll();
         _terrain = terrain;
+
+        if (!IsInstanceValid(WaterMesh))
+        {
+            GD.PushWarning($"{nameof(WaterMesh)} is not assigned.");
+        }
     }
 
     public void GenerateForChunk(Vector2I coord)

@@ -60,13 +60,10 @@ public partial class TerrainController : Node3D
     [Export] public WaterGenerator WaterGenerator { get; set; }
     [Export] public bool WaterEnabled { get; set; } = true;
     [Export] public DecorationGenerator TreeGenerator { get; set; }
-    [Export] public MeshInstance3D TreeTemplate { get; set; }
     [Export] public bool TreesEnabled { get; set; } = true;
     [Export] public DecorationGenerator GrassGenerator { get; set; }
-    [Export] public MeshInstance3D GrassTemplate { get; set; }
     [Export] public bool GrassEnabled { get; set; } = true;
     [Export] public DecorationGenerator StoneGenerator { get; set; }
-    [Export] public MeshInstance3D StoneTemplate { get; set; }
     [Export] public bool StonesEnabled { get; set; } = true;
 
     [ExportGroup("Player Settings")]
