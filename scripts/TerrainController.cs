@@ -34,7 +34,6 @@ public partial class TerrainController : Node3D
 
     [ExportGroup("Chunk Settings")]
     [Export] public ShaderMaterial ChunkMaterial { get; set; }
-    [Export] public MeshInstance3D WaterTemplate { get; set; }
     [Export] public int ChunkSize { get; set; } = 64;
     [Export(PropertyHint.Range, "0, 24, 1, prefer_slider")]
     public int RenderDistance { get; set; } = 4;
@@ -58,6 +57,8 @@ public partial class TerrainController : Node3D
     public float ForestMoistureThreshold { get; set; } = 0.6f;
 
     [ExportGroup("Decoration Settings")]
+    [Export] public WaterGenerator WaterGenerator { get; set; }
+    [Export] public bool WaterEnabled { get; set; } = true;
     [Export] public DecorationGenerator TreeGenerator { get; set; }
     [Export] public MeshInstance3D TreeTemplate { get; set; }
     [Export] public bool TreesEnabled { get; set; } = true;
@@ -78,10 +79,9 @@ public partial class TerrainController : Node3D
 
     private Camera3D PlayerCam => Player?.GetNodeOrNull<Camera3D>("CameraPivot/Camera3D");
     private Camera3D FreeCam => Camera as Camera3D;
-    private Node3D _chunkContainer;
+    public Node3D ChunkContainer { get; private set; }
 
     private readonly Dictionary<Vector2I, MeshInstance3D> _chunks = [];
-    private readonly Dictionary<Vector2I, MeshInstance3D> _waterMeshes = [];
     private readonly object _chunkLock = new();
 
     public float GetWaterLevel() => (OceanHeightThreshold * 2.0f - 1.0f) * Height;
@@ -123,6 +123,19 @@ public partial class TerrainController : Node3D
         (MountainGenerator, nameof(MountainGenerator))
     );
 
+    private void InitializeWaterGenerator()
+    {
+        if (!WaterEnabled) return;
+        if (!IsInstanceValid(WaterGenerator))
+        {
+            GD.PushWarning($"{nameof(WaterGenerator)} is not assigned.");
+            return;
+        }
+        WaterGenerator.Initialize(this);
+        foreach (var coord in _chunks.Keys)
+            WaterGenerator.GenerateForChunk(coord);
+    }
+
     private void InitializeDecorationGenerators(params (DecorationGenerator generator, bool enabled, string name)[] fields)
     {
         foreach (var (generator, enabled, name) in fields)
@@ -156,8 +169,8 @@ public partial class TerrainController : Node3D
 
     public override void _Ready()
     {
-        _chunkContainer = new Node3D { Name = "ChunkContainer" };
-        AddChild(_chunkContainer);
+        ChunkContainer = new Node3D { Name = "ChunkContainer" };
+        AddChild(ChunkContainer);
 
         if (!ValidateNoiseSettings() || !ValidateBiomeGenerators())
         {
@@ -174,6 +187,7 @@ public partial class TerrainController : Node3D
 
         SetActivePlayer(IsPlayerActive);
 
+        InitializeWaterGenerator();
         InitializeDecorationGenerators((TreeGenerator, TreesEnabled, nameof(TreeGenerator)),
                                        (GrassGenerator, GrassEnabled, nameof(GrassGenerator)),
                                        (StoneGenerator, StonesEnabled, nameof(StoneGenerator)));
@@ -417,15 +431,21 @@ public partial class TerrainController : Node3D
         chunkMesh.Position = worldCoord;
         chunkMesh.Visible = true;
 
-        _chunkContainer.AddChild(chunkMesh);
+        ChunkContainer.AddChild(chunkMesh);
         _chunks[coord] = chunkMesh;
 
         var thread = new Thread(() =>
         {
-            var (mesh, hasOcean) = GenerateChunkMeshData(worldCoord);
-            CallDeferred(nameof(AssignChunkMesh), coord, mesh, hasOcean);
+            var mesh = GenerateChunkMeshData(worldCoord);
+            CallDeferred(nameof(AssignChunkMesh), coord, mesh);
         });
         thread.Start();
+    }
+
+    private void TryGenerateWater(Vector2I coord)
+    {
+        if (!WaterEnabled || !IsInstanceValid(WaterGenerator)) return;
+        WaterGenerator.GenerateForChunk(coord);
     }
 
     private static void TryGenerateDecorations(Vector2I coord, params (DecorationGenerator generator, bool enabled)[] fields)
@@ -437,7 +457,7 @@ public partial class TerrainController : Node3D
         }
     }
 
-    private void AssignChunkMesh(Vector2I coord, ArrayMesh mesh, bool hasOcean)
+    private void AssignChunkMesh(Vector2I coord, ArrayMesh mesh)
     {
         lock (_chunkLock)
         {
@@ -446,27 +466,11 @@ public partial class TerrainController : Node3D
             chunk.Mesh = mesh;
         }
 
-        if (hasOcean && IsInstanceValid(WaterTemplate))
-            CreateWaterMesh(coord);
-
+        TryGenerateWater(coord);
         TryGenerateDecorations(coord, (TreeGenerator, TreesEnabled), (GrassGenerator, GrassEnabled), (StoneGenerator, StonesEnabled));
     }
 
-    private void CreateWaterMesh(Vector2I coord)
-    {
-        var waterMesh = WaterTemplate.Duplicate() as MeshInstance3D;
-        waterMesh.Name = $"Water_{coord.X}_{coord.Y}";
-        waterMesh.Position = new Vector3(coord.X * ChunkSize, 0, coord.Y * ChunkSize);
-        waterMesh.Visible = true;
-
-        float waterLevel = (OceanHeightThreshold * 2.0f - 1.0f) * Height;
-        waterMesh.Position = GetWorldCoord(coord) + new Vector3(0, waterLevel, 0);
-
-        _chunkContainer.AddChild(waterMesh);
-        _waterMeshes[coord] = waterMesh;
-    }
-
-    private (ArrayMesh mesh, bool hasOcean) GenerateChunkMeshData(Vector3 position)
+    private ArrayMesh GenerateChunkMeshData(Vector3 position)
     {
         var plane = new PlaneMesh
         {
@@ -481,8 +485,6 @@ public partial class TerrainController : Node3D
         var normalArray = planeArrays[(int)Mesh.ArrayType.Normal].AsVector3Array();
         var tangentArray = planeArrays[(int)Mesh.ArrayType.Tangent].AsFloat32Array();
         var colorArray = new Color[vertexArray.Length];
-
-        bool hasOcean = false;
 
         for (int i = 0; i < vertexArray.Length; i++)
         {
@@ -499,10 +501,6 @@ public partial class TerrainController : Node3D
             var normalizedHeight = (heightValue / Height + 1.0f) / 2.0f;
             var moisture = GetMoisture(worldX, worldZ);
             var temperature = GetTemperature(worldX, worldZ);
-
-            var biome = GetBiome(moisture, temperature, normalizedHeight);
-            if (biome == BiomeType.Ocean)
-                hasOcean = true;
 
             var (primaryBiome, secondaryBiome, blendFactor) = GetBiomeWithBlend(moisture, temperature, normalizedHeight);
             colorArray[i] = new Color((float)primaryBiome / 10.0f, blendFactor, (float)secondaryBiome / 10.0f, 1.0f);
@@ -522,7 +520,13 @@ public partial class TerrainController : Node3D
         var arrayMesh = new ArrayMesh();
         arrayMesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, planeArrays);
 
-        return (arrayMesh, hasOcean);
+        return arrayMesh;
+    }
+
+    private void TryRemoveWater(Vector2I coord)
+    {
+        if (!WaterEnabled || !IsInstanceValid(WaterGenerator)) return;
+        WaterGenerator.RemoveForChunk(coord);
     }
 
     private static void TryRemoveDecorations(Vector2I coord, params (DecorationGenerator generator, bool enabled)[] fields)
@@ -542,13 +546,16 @@ public partial class TerrainController : Node3D
             _chunks.Remove(coord);
         }
 
-        if (_waterMeshes.TryGetValue(coord, out var waterMesh))
-        {
-            waterMesh.QueueFree();
-            _waterMeshes.Remove(coord);
-        }
-
+        TryRemoveWater(coord);
         TryRemoveDecorations(coord, (TreeGenerator, TreesEnabled), (GrassGenerator, GrassEnabled), (StoneGenerator, StonesEnabled));
+    }
+
+    private void TryRegenerateWater()
+    {
+        if (!WaterEnabled || !IsInstanceValid(WaterGenerator)) return;
+        WaterGenerator.ClearAll();
+        foreach (var coord in _chunks.Keys)
+            WaterGenerator.GenerateForChunk(coord);
     }
 
     private void TryRegenerateDecorations(params (DecorationGenerator generator, bool enabled)[] fields)
@@ -570,25 +577,16 @@ public partial class TerrainController : Node3D
             chunksToUpdate = [.. _chunks.Select(kv => (kv.Key, kv.Value))];
         }
 
-        foreach (var coord in _waterMeshes.Keys.ToList())
-        {
-            if (_waterMeshes.TryGetValue(coord, out var waterMesh))
-            {
-                waterMesh.QueueFree();
-                _waterMeshes.Remove(coord);
-            }
-        }
-
         var threads = new List<Thread>();
-        var pendingMeshes = new ConcurrentDictionary<Vector2I, (ArrayMesh mesh, bool hasOcean)>();
+        var pendingMeshes = new ConcurrentDictionary<Vector2I, ArrayMesh>();
 
         foreach (var (coord, chunk) in chunksToUpdate)
         {
             var worldCoord = GetWorldCoord(coord);
             var thread = new Thread(() =>
             {
-                var result = GenerateChunkMeshData(worldCoord);
-                pendingMeshes[coord] = result;
+                var mesh = GenerateChunkMeshData(worldCoord);
+                pendingMeshes[coord] = mesh;
             });
             threads.Add(thread);
             thread.Start();
@@ -604,17 +602,11 @@ public partial class TerrainController : Node3D
             foreach (var kvp in pendingMeshes)
             {
                 if (_chunks.TryGetValue(kvp.Key, out var chunk))
-                {
-                    chunk.Mesh = kvp.Value.mesh;
-                }
-
-                if (kvp.Value.hasOcean && IsInstanceValid(WaterTemplate))
-                {
-                    CreateWaterMesh(kvp.Key);
-                }
+                    chunk.Mesh = kvp.Value;
             }
         }
 
+        TryRegenerateWater();
         TryRegenerateDecorations((TreeGenerator, TreesEnabled), (GrassGenerator, GrassEnabled), (StoneGenerator, StonesEnabled));
     }
 }
