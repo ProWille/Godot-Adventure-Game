@@ -10,7 +10,7 @@ public partial class TreePlacer : DecorationGenerator
 
     protected override bool IsValidBiome(BiomeType biome) => biome == BiomeType.Forest || biome == BiomeType.Grassland;
 
-    protected override void OnPositionsSampled(Vector2I coord, ref List<Vector3> positions)
+    protected override void OnPositionsSampled(Vector2I coord, ref List<(Vector3, int)> positions)
     {
         var adjustedDensity = ForestDensity + (int)(_placementNoise.GetNoise2D(coord.X * DensityNoiseScale, coord.Y * DensityNoiseScale) * DensityNoiseAmplitude);
         adjustedDensity = Math.Max(0, adjustedDensity);
@@ -33,7 +33,7 @@ public partial class TreePlacer : DecorationGenerator
         return biome == BiomeType.Forest;
     }
 
-    private static List<Vector3> AdjustSampledPositions(List<Vector3> positions, int count)
+    private static List<(Vector3, int)> AdjustSampledPositions(List<(Vector3, int)> positions, int count)
     {
         var random = new Random();
         var sampled = new HashSet<int>();
@@ -44,11 +44,9 @@ public partial class TreePlacer : DecorationGenerator
             sampled.Add(index);
         }
 
-        var result = new List<Vector3>();
+        var result = new List<(Vector3, int)>();
         foreach (var index in sampled)
-        {
             result.Add(positions[index]);
-        }
 
         return result;
     }

@@ -6,7 +6,7 @@ namespace AdventureGame.Scripts;
 
 public abstract partial class DecorationGenerator : Resource
 {
-    [Export] public Mesh DecorationMesh { get; set; }
+    [Export] public Mesh[] DecorationMeshes { get; set; }
 
     [ExportGroup("Biome Density")]
 
@@ -44,14 +44,31 @@ public abstract partial class DecorationGenerator : Resource
     protected TerrainController _terrain;
     protected FastNoiseLite _placementNoise;
 
-    protected readonly Dictionary<Vector2I, MultiMeshInstance3D> _instances = [];
+    protected readonly Dictionary<Vector2I, List<MultiMeshInstance3D>> _instances = [];
     protected readonly object _lock = new();
 
     protected abstract bool IsValidBiome(BiomeType biome);
     protected abstract string InstanceName { get; }
 
     protected virtual bool ShouldGenerateForChunk(Vector2I coord) => true;
-    protected virtual void OnPositionsSampled(Vector2I coord, ref List<Vector3> positions) { }
+    protected virtual void OnPositionsSampled(Vector2I coord, ref List<(Vector3, int)> positions) { }
+
+    private void ValidateDecorationMeshes()
+    {
+        if (DecorationMeshes == null || DecorationMeshes.Length == 0)
+        {
+            GD.PushWarning($"{InstanceName} has no decoration meshes assigned.");
+            return;
+        }
+
+        for (var i = 0; i < DecorationMeshes.Length; i++)
+        {
+            if (!IsInstanceValid(DecorationMeshes[i]))
+            {
+                GD.PushWarning($"{InstanceName} {nameof(DecorationMeshes)}[{i}] is not assigned.");
+            }
+        }
+    }
 
     public virtual void Initialize(TerrainController terrain)
     {
@@ -62,16 +79,12 @@ public abstract partial class DecorationGenerator : Resource
             Seed = new Random().Next() * 1000,
             Frequency = PlacementFrequency
         };
-
-        if (!IsInstanceValid(DecorationMesh))
-        {
-            GD.PushWarning($"{InstanceName} {nameof(DecorationMesh)} is not assigned.");
-        }
+        ValidateDecorationMeshes();
     }
 
     public virtual void GenerateForChunk(Vector2I coord)
     {
-        if (!IsInstanceValid(DecorationMesh))
+        if (DecorationMeshes == null || DecorationMeshes.Length == 0)
             return;
 
         var playerChunk = _terrain.CurrentChunkCoord;
@@ -87,28 +100,34 @@ public abstract partial class DecorationGenerator : Resource
         if (positions.Count == 0)
             return;
 
-        var newInstance = CreateInstance(coord, positions);
+        var instances = CreateInstances(coord, positions);
 
         lock (_lock)
         {
-            if (_instances.TryGetValue(coord, out var instance))
+            if (_instances.TryGetValue(coord, out var oldInstances))
             {
-                instance.QueueFree();
+                foreach (var old in oldInstances)
+                    old.QueueFree();
                 _instances.Remove(coord);
             }
-            _instances[coord] = newInstance;
+            _instances[coord] = instances;
         }
 
-        _terrain.AddChild(newInstance);
+        foreach (var instance in instances)
+            _terrain.AddChild(instance);
     }
 
     public virtual void RemoveForChunk(Vector2I coord)
     {
         lock (_lock)
         {
-            if (_instances.TryGetValue(coord, out var instance))
+            if (_instances.TryGetValue(coord, out var instances))
             {
-                instance.QueueFree();
+                foreach (var instance in instances)
+                {
+                    if (IsInstanceValid(instance))
+                        instance.QueueFree();
+                }
                 _instances.Remove(coord);
             }
         }
@@ -132,24 +151,28 @@ public abstract partial class DecorationGenerator : Resource
     {
         lock (_lock)
         {
-            foreach (var instance in _instances.Values)
+            foreach (var instances in _instances.Values)
             {
-                if (IsInstanceValid(instance))
-                    instance.QueueFree();
+                foreach (var instance in instances)
+                {
+                    if (IsInstanceValid(instance))
+                        instance.QueueFree();
+                }
             }
             _instances.Clear();
         }
     }
 
-    private List<Vector3> SamplePositions(Vector2I coord)
+    private List<(Vector3 position, int meshIndex)> SamplePositions(Vector2I coord)
     {
         var chunkSize = _terrain.ChunkSize;
         var resolution = _terrain.Resolution;
         var offsetX = coord.X * chunkSize;
         var offsetZ = coord.Y * chunkSize;
-
         var step = chunkSize / (float)resolution;
-        var positions = new List<Vector3>();
+
+        var results = new List<(Vector3, int)>();
+        var random = new Random(coord.X * 10000 + coord.Y * RandomSeedBase);
 
         for (float x = step; x < chunkSize; x += step)
         {
@@ -179,47 +202,64 @@ public abstract partial class DecorationGenerator : Resource
                     continue;
 
                 if (normalizedNoise > threshold)
-                    positions.Add(new Vector3(worldX, height, worldZ));
+                {
+                    var meshIndex = random.Next(DecorationMeshes.Length);
+                    results.Add((new Vector3(worldX, height, worldZ), meshIndex));
+                }
             }
         }
 
-        return positions;
+        return results;
     }
 
-    private MultiMeshInstance3D CreateInstance(Vector2I coord, List<Vector3> positions)
+    private List<MultiMeshInstance3D> CreateInstances(Vector2I coord, List<(Vector3 position, int meshIndex)> positions)
     {
-        var multiMesh = new MultiMesh
+        var instances = new List<MultiMeshInstance3D>();
+        var groups = new Dictionary<int, List<Vector3>>();
+
+        foreach (var (pos, idx) in positions)
         {
-            TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
-            InstanceCount = positions.Count,
-            Mesh = DecorationMesh
-        };
-
-        var random = new Random(coord.X * 10000 + coord.Y + RandomSeedBase);
-        for (int i = 0; i < positions.Count; i++)
-        {
-            var rotation = (float)(random.NextDouble() * Math.PI * 2);
-            var scale = (float)(random.NextDouble() * (MaxScale - MinScale) + MinScale);
-            var pos = positions[i];
-            pos.Y += HeightOffset * scale;
-
-            var transform = Transform3D.Identity
-                .Rotated(Vector3.Up, rotation)
-                .Scaled(new Vector3(scale, scale, scale))
-                .Translated(pos);
-
-            multiMesh.SetInstanceTransform(i, transform);
+            if (!groups.ContainsKey(idx))
+                groups[idx] = [];
+            groups[idx].Add(pos);
         }
 
-        var chunkPos = _terrain.GetChunkCoord(coord.X, coord.Y);
-        var newInstance = new MultiMeshInstance3D
+        foreach (var (meshIdx, meshPositions) in groups)
         {
-            Name = $"{InstanceName}_{chunkPos.X}_{chunkPos.Y}",
-            Multimesh = multiMesh,
-            Position = new Vector3(chunkPos.X, 0.0f, chunkPos.Y)
-        };
+            var multiMesh = new MultiMesh
+            {
+                TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
+                InstanceCount = meshPositions.Count,
+                Mesh = DecorationMeshes[meshIdx]
+            };
+            
+            var random = new Random(coord.X * 10000 + coord.Y + RandomSeedBase + meshIdx);
+            for (int i = 0; i < meshPositions.Count; i++)
+            {
+                var rotation = (float)(random.NextDouble() * Math.PI * 2);
+                var scale = (float)(random.NextDouble() * (MaxScale - MinScale) + MinScale);
+                var pos = meshPositions[i];
+                pos.Y += HeightOffset * scale;
 
-        return newInstance;
+                var transform = Transform3D.Identity
+                    .Rotated(Vector3.Up, rotation)
+                    .Scaled(new Vector3(scale, scale, scale))
+                    .Translated(pos);
+
+                multiMesh.SetInstanceTransform(i, transform);
+            }
+
+            var chunkPos = _terrain.GetChunkCoord(coord.X, coord.Y);
+            var instance = new MultiMeshInstance3D
+            {
+                Name = $"{InstanceName}_{meshIdx}_{chunkPos.X}_{chunkPos.Y}",
+                Multimesh = multiMesh,
+                Position = new Vector3(chunkPos.X, 0.0f, chunkPos.Y)
+            };
+            instances.Add(instance);
+        }
+
+        return instances;
     }
 
     private int GetBiomeDensity(BiomeType biome)

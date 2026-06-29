@@ -1,11 +1,12 @@
 [gd_resource type="Resource" format=3 uid="uid://cya0kkp5j7ujm"]
 
 [ext_resource type="Script" uid="uid://rbnx8dfclf8s" path="res://scripts/Decorations/Trees/TreePlacer.cs" id="1_7tvel"]
-[ext_resource type="ArrayMesh" uid="uid://dhhiw85djoevm" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Trees/GenericTrees/extracted/GenericTreeE.GenericTreeE_002.mesh" id="2_mesh"]
+[ext_resource type="ArrayMesh" uid="uid://dhhiw85djoevm" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Trees/GenericTrees/extracted/GenericTreeE.GenericTreeE_002.mesh" id="1_8ktxp"]
+[ext_resource type="ArrayMesh" uid="uid://bq7ivngkw55mp" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Trees/Birch/extracted/BirchTreeAdultA.BirchTreeAdultA_001.mesh" id="2_gdobj"]
 
 [resource]
 script = ExtResource("1_7tvel")
-DecorationMesh = ExtResource("2_mesh")
+DecorationMeshes = Array[Mesh]([ExtResource("1_8ktxp"), ExtResource("2_gdobj")])
 ForestDensity = 20
 GrasslandDensity = 5
 DensityThreshold = 0.6

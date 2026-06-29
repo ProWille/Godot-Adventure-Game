@@ -1,11 +1,11 @@
 [gd_resource type="Resource" format=3 uid="uid://dr5xgsfmysydf"]
 
-[ext_resource type="ArrayMesh" uid="uid://def8io0w4ytcj" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Rocks/extracted/RockBigB.RockBigB_001.mesh" id="1_kjs6u"]
+[ext_resource type="ArrayMesh" uid="uid://cmqtqei5wjuuy" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Rocks/extracted/RockBigC.RockBigC_001.mesh" id="1_kjs6u"]
 [ext_resource type="Script" uid="uid://cs1qck3wj1bdn" path="res://scripts/Decorations/Stones/StonePlacer.cs" id="1_o7ru4"]
 
 [resource]
 script = ExtResource("1_o7ru4")
-DecorationMesh = ExtResource("1_kjs6u")
+DecorationMeshes = Array[Mesh]([ExtResource("1_kjs6u")])
 ForestDensity = 30
 GrasslandDensity = 30
 DensityThreshold = 0.3
