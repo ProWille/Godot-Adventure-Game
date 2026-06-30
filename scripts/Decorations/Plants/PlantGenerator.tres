@@ -1,0 +1,14 @@
+[gd_resource type="Resource" format=3 uid="uid://cqjoi7bwwsyv1"]
+
+[ext_resource type="Script" uid="uid://dwhxjh6qnjxts" path="res://scripts/Decorations/Plants/PlantPlacer.cs" id="1_5lncm"]
+[ext_resource type="ArrayMesh" uid="uid://cnyct83pxg86w" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Plants/Bluebells/extracted/BluebellsClusterB.BluebellsClusterB_001.mesh" id="1_pwa4m"]
+[ext_resource type="ArrayMesh" uid="uid://cqdaomkdvryro" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Plants/Foxgloves/extracted/FoxgloveAVariantA.FoxgloveAVariantA_001.mesh" id="2_vq8n1"]
+
+[resource]
+script = ExtResource("1_5lncm")
+DecorationMeshes = Array[Mesh]([ExtResource("1_pwa4m"), ExtResource("2_vq8n1")])
+ForestDensity = 40
+GrasslandDensity = 150
+PlacementFrequency = 0.09999999999999999
+MinScale = 5.0
+MaxScale = 10.0

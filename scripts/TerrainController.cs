@@ -65,6 +65,8 @@ public partial class TerrainController : Node3D
     [Export] public bool GrassEnabled { get; set; } = true;
     [Export] public DecorationGenerator StoneGenerator { get; set; }
     [Export] public bool StonesEnabled { get; set; } = true;
+    [Export] public DecorationGenerator PlantGenerator { get; set; }
+    [Export] public bool PlantsEnabled { get; set; } = true;
 
     [ExportGroup("Player Settings")]
     [Export] public Node3D Player { get; set; }
@@ -89,6 +91,17 @@ public partial class TerrainController : Node3D
     public Vector2I GetChunkCoord(float worldX, float worldZ) => new((int)Math.Floor(worldX / ChunkSize), (int)Math.Floor(worldZ / ChunkSize));
     public Vector2I GetChunkCoord(Vector3 position) => GetChunkCoord(position.X, position.Z);
     public Vector3 GetWorldCoord(Vector2I coord) => new(coord.X * ChunkSize + ChunkSize / 2, 0, coord.Y * ChunkSize + ChunkSize / 2);
+
+    private (DecorationGenerator generator, bool enabled)[] GetDecorationGenerators()
+    {
+        return
+        [
+            (TreeGenerator, TreesEnabled),
+            (GrassGenerator, GrassEnabled),
+            (StoneGenerator, StonesEnabled),
+            (PlantGenerator, PlantsEnabled)
+        ];
+    }
 
     private static bool ValidateFields(params (GodotObject field, string name)[] fields)
     {
@@ -133,14 +146,14 @@ public partial class TerrainController : Node3D
             WaterGenerator.GenerateForChunk(coord);
     }
 
-    private void InitializeDecorationGenerators(params (DecorationGenerator generator, bool enabled, string name)[] fields)
+    private void InitializeDecorationGenerators(params (DecorationGenerator generator, bool enabled)[] fields)
     {
-        foreach (var (generator, enabled, name) in fields)
+        foreach (var (generator, enabled) in fields)
         {
             if (!enabled) continue;
             if (!IsInstanceValid(generator))
             {
-                GD.PushWarning($"{name} is not assigned.");
+                GD.PushWarning($"Generator is not assigned.");
                 continue;
             }
             generator.Initialize(this);
@@ -185,9 +198,7 @@ public partial class TerrainController : Node3D
         SetActivePlayer(IsPlayerActive);
 
         InitializeWaterGenerator();
-        InitializeDecorationGenerators((TreeGenerator, TreesEnabled, nameof(TreeGenerator)),
-                                       (GrassGenerator, GrassEnabled, nameof(GrassGenerator)),
-                                       (StoneGenerator, StonesEnabled, nameof(StoneGenerator)));
+        InitializeDecorationGenerators(GetDecorationGenerators());
 
         CurrentChunkCoord = GetChunkCoord(ActivePlayer.GlobalPosition);
         LoadChunksAroundPlayer();
@@ -464,7 +475,7 @@ public partial class TerrainController : Node3D
         }
 
         TryGenerateWater(coord);
-        TryGenerateDecorations(coord, (TreeGenerator, TreesEnabled), (GrassGenerator, GrassEnabled), (StoneGenerator, StonesEnabled));
+        TryGenerateDecorations(coord, GetDecorationGenerators());
     }
 
     private ArrayMesh GenerateChunkMeshData(Vector3 position)
@@ -544,7 +555,7 @@ public partial class TerrainController : Node3D
         }
 
         TryRemoveWater(coord);
-        TryRemoveDecorations(coord, (TreeGenerator, TreesEnabled), (GrassGenerator, GrassEnabled), (StoneGenerator, StonesEnabled));
+        TryRemoveDecorations(coord, GetDecorationGenerators());
     }
 
     private void TryRegenerateWater()
@@ -604,6 +615,6 @@ public partial class TerrainController : Node3D
         }
 
         TryRegenerateWater();
-        TryRegenerateDecorations((TreeGenerator, TreesEnabled), (GrassGenerator, GrassEnabled), (StoneGenerator, StonesEnabled));
+        TryRegenerateDecorations(GetDecorationGenerators());
     }
 }

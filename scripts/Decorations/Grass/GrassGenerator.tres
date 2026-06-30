@@ -2,13 +2,14 @@
 
 [ext_resource type="ArrayMesh" uid="uid://3qoheu8rxmkc" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Grass/GrassLumps/extracted/GrassLumpLargeETall.GrassLumpLargeETall_001.mesh" id="1_q0v66"]
 [ext_resource type="Script" uid="uid://dsaobgewr0g4b" path="res://scripts/Decorations/Grass/GrassPlacer.cs" id="1_u2avk"]
-[ext_resource type="ArrayMesh" uid="uid://dvads0x8uogwu" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Bushes/extracted/Bush9.Bush9_001.mesh" id="2_amk5w"]
-[ext_resource type="ArrayMesh" uid="uid://cnyct83pxg86w" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Plants/Bluebells/extracted/BluebellsClusterB.BluebellsClusterB_001.mesh" id="3_shc4b"]
+[ext_resource type="ArrayMesh" uid="uid://bv84lgt5uibvq" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Grass/GrassLumps/extracted/GrassLumpLargeHTall.GrassBladesH_007.mesh" id="2_shc4b"]
+[ext_resource type="ArrayMesh" uid="uid://c0o8oi7ecqswi" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Grass/GrassLumps/extracted/GrassLumpLargeB.GrassLumpLargeB_001.mesh" id="3_amk5w"]
 
 [resource]
 script = ExtResource("1_u2avk")
-DecorationMeshes = Array[Mesh]([ExtResource("1_q0v66"), ExtResource("2_amk5w"), ExtResource("3_shc4b")])
+DecorationMeshes = Array[Mesh]([ExtResource("1_q0v66"), ExtResource("2_shc4b"), ExtResource("3_amk5w")])
 ForestDensity = 50
 GrasslandDensity = 200
+DensityThreshold = 0.5
 MinScale = 5.0
 MaxScale = 10.0

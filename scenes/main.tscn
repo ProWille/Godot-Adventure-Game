@@ -16,6 +16,7 @@
 [ext_resource type="Texture2D" uid="uid://c7hukusiq4wi6" path="res://assets/Blockbench/terrain/grass_terrain_texture.png" id="11_jbj1t"]
 [ext_resource type="Texture2D" uid="uid://b3a5puaud8b3q" path="res://assets/Blockbench/terrain/rock_terrain_texture.png" id="12_dp3eg"]
 [ext_resource type="Script" uid="uid://cqy0doqb1pwrd" path="res://scripts/DebugOverlay.cs" id="12_eb6dy"]
+[ext_resource type="Resource" uid="uid://cqjoi7bwwsyv1" path="res://scripts/Decorations/Plants/PlantGenerator.tres" id="16_0ld40"]
 [ext_resource type="PackedScene" uid="uid://dus5mvg748wnc" path="res://scenes/player.tscn" id="20_yc10j"]
 [ext_resource type="Resource" uid="uid://egkus3nsj3q5" path="res://scripts/Water/WaterGenerator.tres" id="21_wtrsc"]
 
@@ -89,6 +90,7 @@ WaterGenerator = ExtResource("21_wtrsc")
 TreeGenerator = ExtResource("3_trceg")
 GrassGenerator = ExtResource("3_eb6dy")
 StoneGenerator = ExtResource("9_0ld40")
+PlantGenerator = ExtResource("16_0ld40")
 Player = NodePath("../Player")
 Camera = NodePath("../Camera")
 
