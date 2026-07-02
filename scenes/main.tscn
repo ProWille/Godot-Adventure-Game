@@ -19,6 +19,10 @@
 [ext_resource type="Resource" uid="uid://cqjoi7bwwsyv1" path="res://scripts/Decorations/Plants/PlantGenerator.tres" id="16_0ld40"]
 [ext_resource type="PackedScene" uid="uid://dus5mvg748wnc" path="res://scenes/player.tscn" id="20_yc10j"]
 [ext_resource type="Resource" uid="uid://egkus3nsj3q5" path="res://scripts/Water/WaterGenerator.tres" id="21_wtrsc"]
+[ext_resource type="Resource" uid="uid://dpel34itqk8ee" path="res://scripts/Biomes/Snow/SnowGenerator.tres" id="22_snow"]
+[ext_resource type="Resource" uid="uid://chpwy6wwsn0w0" path="res://scripts/Biomes/Desert/DesertGenerator.tres" id="23_desert"]
+[ext_resource type="Texture2D" uid="uid://snowtex01" path="res://assets/Blockbench/terrain/snow_terrain_texture.png" id="24_snowtx"]
+[ext_resource type="Texture2D" uid="uid://desertex01" path="res://assets/Blockbench/terrain/desert_terrain_texture.png" id="25_desertx"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_eb6dy"]
 frequency = 0.0005
@@ -54,12 +58,16 @@ shader_parameter/sand_texture = ExtResource("11_a8y0u")
 shader_parameter/grass_texture = ExtResource("11_jbj1t")
 shader_parameter/forest_texture = ExtResource("10_jbj1t")
 shader_parameter/rock_texture = ExtResource("12_dp3eg")
+shader_parameter/snow_texture = ExtResource("24_snowtx")
+shader_parameter/desert_texture = ExtResource("25_desertx")
 shader_parameter/texture_scale = 10.0
 shader_parameter/use_textures = true
 shader_parameter/sand_color = Color(0.9, 0.76, 0.5, 1)
 shader_parameter/grass_color = Color(0.4, 0.8, 0.2, 1)
 shader_parameter/forest_color = Color(0.2, 0.6, 0.1, 1)
 shader_parameter/rock_color = Color(0.7, 0.7, 0.8, 1)
+shader_parameter/snow_color = Color(0.95, 0.95, 1, 1)
+shader_parameter/desert_color = Color(0.85, 0.7, 0.4, 1)
 
 [sub_resource type="LabelSettings" id="LabelSettings_tipki"]
 
@@ -80,6 +88,8 @@ OceanGenerator = ExtResource("3_jkv2x")
 PlainsGenerator = ExtResource("4_jbj1t")
 ForestGenerator = ExtResource("3_a8y0u")
 MountainGenerator = ExtResource("6_muem4")
+SnowGenerator = ExtResource("22_snow")
+DesertGenerator = ExtResource("23_desert")
 ChunkMaterial = SubResource("ShaderMaterial_qjw6e")
 RenderDistance = 8
 Resolution = 16

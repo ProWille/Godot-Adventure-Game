@@ -12,7 +12,9 @@ public enum BiomeType
     Ocean,
     Grassland,
     Forest,
-    Mountain
+    Mountain,
+    Snow,
+    Desert
 }
 
 public partial class TerrainController : Node3D
@@ -31,6 +33,8 @@ public partial class TerrainController : Node3D
     [Export] public BiomeGenerator PlainsGenerator { get; set; }
     [Export] public BiomeGenerator ForestGenerator { get; set; }
     [Export] public BiomeGenerator MountainGenerator { get; set; }
+    [Export] public BiomeGenerator SnowGenerator { get; set; }
+    [Export] public BiomeGenerator DesertGenerator { get; set; }
 
     [ExportGroup("Chunk Settings")]
     [Export] public ShaderMaterial ChunkMaterial { get; set; }
@@ -55,6 +59,10 @@ public partial class TerrainController : Node3D
     public float GrasslandMoistureThreshold { get; set; } = 0.3f;
     [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
     public float ForestMoistureThreshold { get; set; } = 0.6f;
+    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
+    public float SnowTemperatureThreshold { get; set; } = 0.3f;
+    [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
+    public float DesertTemperatureThreshold { get; set; } = 0.7f;
 
     [ExportGroup("Decoration Settings")]
     [Export] public WaterGenerator WaterGenerator { get; set; }
@@ -130,7 +138,9 @@ public partial class TerrainController : Node3D
         (OceanGenerator, nameof(OceanGenerator)),
         (PlainsGenerator, nameof(PlainsGenerator)),
         (ForestGenerator, nameof(ForestGenerator)),
-        (MountainGenerator, nameof(MountainGenerator))
+        (MountainGenerator, nameof(MountainGenerator)),
+        (SnowGenerator, nameof(SnowGenerator)),
+        (DesertGenerator, nameof(DesertGenerator))
     );
 
     private void InitializeWaterGenerator()
@@ -322,8 +332,18 @@ public partial class TerrainController : Node3D
         if (height < OceanHeightThreshold)
             return BiomeType.Ocean;
 
+        if (temperature < SnowTemperatureThreshold)
+            return BiomeType.Snow;
+
         if (height > MountainHeightThreshold)
             return BiomeType.Mountain;
+
+        if (temperature > DesertTemperatureThreshold)
+        {
+            return moisture > ForestMoistureThreshold
+                ? BiomeType.Forest
+                : BiomeType.Desert;
+        }
 
         if (moisture > ForestMoistureThreshold)
             return BiomeType.Forest;
@@ -376,6 +396,8 @@ public partial class TerrainController : Node3D
             BiomeType.Grassland => PlainsGenerator,
             BiomeType.Forest => ForestGenerator,
             BiomeType.Mountain => MountainGenerator,
+            BiomeType.Snow => SnowGenerator,
+            BiomeType.Desert => DesertGenerator,
             _ => ForestGenerator
         };
     }

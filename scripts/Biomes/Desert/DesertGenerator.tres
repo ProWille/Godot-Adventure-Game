@@ -1,0 +1,15 @@
+[gd_resource type="Resource" format=3 uid="uid://chpwy6wwsn0w0"]
+
+[ext_resource type="Curve" path="res://scripts/Biomes/Desert/DesertDetailWeight.tres" id="1_6s2xe"]
+[ext_resource type="Script" uid="uid://ds4cn0jqldd38" path="res://scripts/Biomes/Desert/DesertScript.cs" id="1_agg8d"]
+[ext_resource type="Curve" path="res://scripts/Biomes/Desert/DesertErosionWeight.tres" id="2_r0a6a"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_desert"]
+fractal_type = 2
+fractal_octaves = 4
+
+[resource]
+script = ExtResource("1_agg8d")
+HeightmapNoise = SubResource("FastNoiseLite_desert")
+DetailWeight = ExtResource("1_6s2xe")
+ErosionWeight = ExtResource("2_r0a6a")
