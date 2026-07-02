@@ -197,7 +197,7 @@ public abstract partial class DecorationGenerator : Resource
                 var density = GetBiomeDensity(biome);
                 var threshold = 1.0f - DensityThreshold * Math.Min(density * 0.02f, 1.0f);
 
-                var height = _terrain.GetBlendedHeightmap(worldX, worldZ);
+                var height = _terrain.GetHeightmap(worldX, worldZ);
                 if (height < _terrain.GetWaterLevel())
                     continue;
 

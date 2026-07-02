@@ -20,14 +20,10 @@ uniform vec3 desert_color : source_color = vec3(0.85, 0.7, 0.4);
 group_uniforms;
 
 varying float v_biome;
-varying float v_blend;
-varying float v_blendedBiome;
 varying vec2 v_world_uv;
 
 void vertex() {
 	v_biome = COLOR.r * 10.0;
-	v_blend = COLOR.g;
-	v_blendedBiome = COLOR.b * 10.0;
 	v_world_uv = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xz / texture_scale;
 }
 
@@ -45,13 +41,5 @@ vec3 get_biome_color(int biome, vec2 uv) {
 }
 
 void fragment() {
-	int biome = int(v_biome + 0.5);
-	int blendedBiome = int(v_blendedBiome + 0.5);
-	
-	vec3 color1 = get_biome_color(biome, v_world_uv);
-	vec3 color2 = get_biome_color(blendedBiome, v_world_uv);
-	
-	vec3 color = mix(color1, color2, v_blend);
-	
-	ALBEDO = color;
+	ALBEDO = get_biome_color(int(v_biome + 0.5), v_world_uv);
 }

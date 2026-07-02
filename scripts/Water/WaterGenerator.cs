@@ -93,7 +93,7 @@ public partial class WaterGenerator : Resource
         for (float x = 0; x <= chunkSize; x += step)
             for (float z = 0; z <= chunkSize; z += step)
             {
-                var heightMap = _terrain.GetBlendedHeightmap(offsetX + x, offsetZ + z);
+                var heightMap = _terrain.GetHeightmap(offsetX + x, offsetZ + z);
                 if ((heightMap / height + 1.0f) * 0.5f < oceanThreshold)
                     return true;
             }

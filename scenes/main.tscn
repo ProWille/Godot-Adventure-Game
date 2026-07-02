@@ -93,7 +93,7 @@ DesertGenerator = ExtResource("23_desert")
 ChunkMaterial = SubResource("ShaderMaterial_qjw6e")
 RenderDistance = 8
 Resolution = 16
-PlayerOffset = 1.0
+Height = 32.0
 MountainHeightThreshold = 0.8
 ForestMoistureThreshold = 0.4
 WaterGenerator = ExtResource("21_wtrsc")
@@ -103,6 +103,7 @@ StoneGenerator = ExtResource("9_0ld40")
 PlantGenerator = ExtResource("16_0ld40")
 Player = NodePath("../Player")
 Camera = NodePath("../Camera")
+PlayerOffset = 1.0
 
 [node name="Player" parent="." unique_id=1483300688 instance=ExtResource("20_yc10j")]
 

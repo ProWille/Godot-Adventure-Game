@@ -9,6 +9,6 @@ script = ExtResource("1_5lncm")
 DecorationMeshes = Array[Mesh]([ExtResource("1_pwa4m"), ExtResource("2_vq8n1")])
 ForestDensity = 40
 GrasslandDensity = 150
-PlacementFrequency = 0.09999999999999999
+PlacementFrequency = 0.1
 MinScale = 5.0
 MaxScale = 10.0
