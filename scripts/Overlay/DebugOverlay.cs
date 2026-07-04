@@ -7,9 +7,35 @@ public partial class DebugOverlay : CanvasLayer
     [Export(PropertyHint.Range, "0.05, 2.0, 0.05, prefer_slider")]
     public float UpdateInterval { get; set; } = 0.2f;
 
+    [Export] public bool EnableBackground { get; set; } = true;
+    [Export(PropertyHint.Range, "0.0f, 1.0f, 0.01f, prefer_slider")]
+    public float BackgroundTransparency { get; set; } = 0.5f;
+
     private Label _debugLabel;
+    private ColorRect _background;
     private TerrainController _terrain;
     private float _elapsedTime;
+
+    private Vector2 BackgroundPosition => _debugLabel.Position - new Vector2(8, 4);
+    private Vector2 BackgroundSize => _debugLabel.Size + new Vector2(16, 8);
+
+    private void CreateBackground()
+    {
+        _background = new ColorRect
+        {
+            Color = new(0.0f, 0.0f, 0.0f, BackgroundTransparency),
+            MouseFilter = Control.MouseFilterEnum.Ignore
+        };
+        AddChild(_background);
+        MoveChild(_background, 0);
+    }
+
+    private void UpdateBackground()
+    {
+        if (!EnableBackground) return;
+        _background.Position = BackgroundPosition;
+        _background.Size = BackgroundSize;
+    }
 
     public override void _Ready()
     {
@@ -20,11 +46,14 @@ public partial class DebugOverlay : CanvasLayer
             return;
         }
 
+        if (EnableBackground) CreateBackground();
+
         _terrain = GetTree().CurrentScene?.GetNodeOrNull<TerrainController>("TerrainController");
         if (!IsInstanceValid(_terrain))
         {
             _debugLabel.Text = $"TerrainController node not found in current scene.";
             _debugLabel.LabelSettings.FontColor = Colors.Red;
+            UpdateBackground();
             return;
         }
 
@@ -32,6 +61,7 @@ public partial class DebugOverlay : CanvasLayer
         {
             _debugLabel.Text = $"Player node and Camera node not found in current scene.";
             _debugLabel.LabelSettings.FontColor = Colors.Red;
+            UpdateBackground();
             return;
         }
     }
@@ -61,5 +91,7 @@ public partial class DebugOverlay : CanvasLayer
         Height: {height}
         Biome Type: {biome}
         """;
+
+        UpdateBackground();
     }
 }

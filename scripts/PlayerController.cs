@@ -44,7 +44,7 @@ public partial class PlayerController : CharacterBody3D
         if (@event is InputEventMouseMotion mouseMotion)
             Turn(mouseMotion.Relative.X, mouseMotion.Relative.Y);
 
-        if (@event is InputEventKey key && key.Pressed)
+        if (@event is InputEventKey key && key.Pressed && !key.Echo)
         {
             if (key.Keycode == Key.R)
                 GetTree().ReloadCurrentScene();

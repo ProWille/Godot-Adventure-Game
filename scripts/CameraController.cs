@@ -38,7 +38,7 @@ public partial class CameraController : Camera3D
         if (@event is InputEventMouseMotion mouseMotion)
             Turn(mouseMotion.Relative.X * Sensitivity, mouseMotion.Relative.Y * Sensitivity);
 
-        if (@event is InputEventKey key && key.Pressed)
+        if (@event is InputEventKey key && key.Pressed && !key.Echo)
         {
             if (key.Keycode == Key.R)
                 GetTree().ReloadCurrentScene();
