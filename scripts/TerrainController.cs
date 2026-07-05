@@ -79,6 +79,7 @@ public partial class TerrainController : Node3D
     [Export] public bool IsPlayerActive { get; set; } = true;
 
     public Vector2I CurrentChunkCoord { get; private set; }
+    public event Action ChunkCoordChanged;
     public Node3D ActivePlayer => IsPlayerActive ? Player : Camera;
 
     private Camera3D PlayerCam => Player?.GetNodeOrNull<Camera3D>("CameraPivot/Camera3D");
@@ -315,6 +316,7 @@ public partial class TerrainController : Node3D
             return;
 
         CurrentChunkCoord = newChunkCoord;
+        ChunkCoordChanged?.Invoke();
         LoadChunksAroundPlayer();
     }
 

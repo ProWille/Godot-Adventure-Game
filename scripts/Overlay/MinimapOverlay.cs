@@ -1,3 +1,4 @@
+using System.Threading;
 using Godot;
 
 namespace AdventureGame.Scripts;
@@ -7,14 +8,12 @@ public partial class MinimapOverlay : CanvasLayer
     [Export] private int _minimapSize = 128;
     [Export(PropertyHint.Range, "0.0f, 1.0f, 0.01f, prefer_slider")]
     private float _minimapTransparency = 1.0f;
-    [Export] private float _updateInterval = 0.25f;
     [Export] private bool _startVisible = false;
 
     private TerrainController _terrain;
     private TextureRect _textureRect;
     private Image _image;
     private ImageTexture _texture;
-    private Timer _updateTimer;
     private Vector2 _margin = new(10, 10);
 
     private static readonly Color[] BiomeColors =
@@ -45,23 +44,10 @@ public partial class MinimapOverlay : CanvasLayer
         };
         panel.AddChild(_textureRect);
 
-        _image = Image.CreateEmpty(_minimapSize, _minimapSize, false, Image.Format.Rgba8);
-        _texture = ImageTexture.CreateFromImage(_image);
-        _textureRect.Texture = _texture;
+        var image = Image.CreateEmpty(_minimapSize, _minimapSize, false, Image.Format.Rgba8);
+        AssignMinimapImage(image);
 
         return panel;
-    }
-
-    private void CreateTimer()
-    {
-        _updateTimer = new Timer
-        {
-            WaitTime = _updateInterval,
-            OneShot = false
-        };
-        _updateTimer.Timeout += UpdateMinimap;
-        AddChild(_updateTimer);
-        _updateTimer.Start();
     }
 
     private void Reposition(Panel panel)
@@ -80,23 +66,40 @@ public partial class MinimapOverlay : CanvasLayer
             return;
 
         var activePlayer = _terrain.ActivePlayer;
-        var playerPos = IsInstanceValid(activePlayer) ? activePlayer.GlobalPosition : Vector3.Zero;
+        if (!IsInstanceValid(activePlayer)) return;
 
+        var playerPos = activePlayer.GlobalPosition;
         var halfCoverage = _terrain.ChunkSize * _terrain.RenderDistance;
         var pixelSize = halfCoverage * 2 / _minimapSize;
 
-        for (int y = 0; y < _minimapSize; y++)
+        var thread = new Thread(() =>
         {
-            for (int x = 0; x < _minimapSize; x++)
+            var image = Image.CreateEmpty(_minimapSize, _minimapSize, false, Image.Format.Rgba8);
+            for (int y = 0; y < _minimapSize; y++)
             {
-                var worldX = playerPos.X - halfCoverage + x * pixelSize;
-                var worldZ = playerPos.Z - halfCoverage + y * pixelSize;
-                var color = SampleBiome(worldX, worldZ);
-                _image.SetPixel(x, y, color);
+                for (int x = 0; x < _minimapSize; x++)
+                {
+                    var worldX = playerPos.X - halfCoverage + x * pixelSize;
+                    var worldZ = playerPos.Z - halfCoverage + y * pixelSize;
+                    var biome = _terrain.GetBiome(worldX, worldZ);
+                    var idx = (int)biome;
+                    var color = idx >= 0 && idx < BiomeColors.Length
+                        ? new Color(BiomeColors[idx], _minimapTransparency)
+                        : new Color(Colors.Magenta, _minimapTransparency);
+                    image.SetPixel(x, y, color);
+                }
             }
-        }
+            CallDeferred(nameof(AssignMinimapImage), image);
+        });
+        thread.Start();
+    }
 
-        _texture.SetImage(_image);
+    private void AssignMinimapImage(Image image)
+    {
+        if (!IsInstanceValid(_textureRect)) return;
+        _image = image;
+        _texture = ImageTexture.CreateFromImage(_image);
+        _textureRect.Texture = _texture;
     }
 
     public override void _Ready()
@@ -110,11 +113,12 @@ public partial class MinimapOverlay : CanvasLayer
             return;
         }
 
+        _terrain.ChunkCoordChanged += UpdateMinimap;
+
         var panel = CreateMinimap();
         Reposition(panel);
         UpdateMinimap();
         GetViewport().SizeChanged += () => Reposition(panel);
-        CreateTimer();
     }
 
     public override void _Input(InputEvent @event)
@@ -124,12 +128,5 @@ public partial class MinimapOverlay : CanvasLayer
             if (key.Keycode == Key.M)
                 Visible = !Visible;
         }
-    }
-
-    private Color SampleBiome(float worldX, float worldZ)
-    {
-        var biome = _terrain.GetBiome(worldX, worldZ);
-        var idx = (int)biome;
-        return idx >= 0 && idx < BiomeColors.Length ? new(BiomeColors[idx], _minimapTransparency) : new(Colors.Magenta, _minimapTransparency);
     }
 }
