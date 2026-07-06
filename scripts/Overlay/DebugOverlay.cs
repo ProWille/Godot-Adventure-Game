@@ -4,64 +4,62 @@ namespace AdventureGame.Scripts;
 
 public partial class DebugOverlay : CanvasLayer
 {
-    [Export(PropertyHint.Range, "0.05, 2.0, 0.05, prefer_slider")]
-    public float UpdateInterval { get; set; } = 0.2f;
-
-    [Export] public bool EnableBackground { get; set; } = true;
+    [Export(PropertyHint.Range, "0.05f, 2.0f, 0.05f, prefer_slider")]
+    private float UpdateInterval { get; set; } = 0.2f;
     [Export(PropertyHint.Range, "0.0f, 1.0f, 0.01f, prefer_slider")]
-    public float BackgroundTransparency { get; set; } = 0.5f;
+    private float BackgroundTransparency { get; set; } = 0.5f;
+    [Export] private Vector2 _margin = new(10, 10);
 
     private Label _debugLabel;
     private ColorRect _background;
     private TerrainController _terrain;
     private float _elapsedTime;
 
-    private Vector2 BackgroundPosition => _debugLabel.Position - new Vector2(8, 4);
-    private Vector2 BackgroundSize => _debugLabel.Size + new Vector2(16, 8);
+    private Vector2 BackgroundSize => _debugLabel.GetCombinedMinimumSize() + _margin;
 
     private void CreateBackground()
     {
         _background = new ColorRect
         {
             Color = new(0.0f, 0.0f, 0.0f, BackgroundTransparency),
-            MouseFilter = Control.MouseFilterEnum.Ignore
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+            Position = _margin
         };
         AddChild(_background);
-        MoveChild(_background, 0);
     }
 
-    private void UpdateBackground()
+    private void CreateLabel()
     {
-        if (!EnableBackground) return;
-        _background.Position = BackgroundPosition;
+        _debugLabel = new Label
+        {
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+            Position = _margin * 0.5f
+        };
+        _background.AddChild(_debugLabel);
+    }
+
+    private void ErrorMessage(string message)
+    {
+        _debugLabel.Text = message;
+        _debugLabel.LabelSettings.FontColor = Colors.Red;
         _background.Size = BackgroundSize;
     }
 
     public override void _Ready()
     {
-        _debugLabel = GetNodeOrNull<Label>("DebugLabel");
-        if (!IsInstanceValid(_debugLabel))
-        {
-            GD.PushError("DebugLabel not found in current node.");
-            return;
-        }
-
-        if (EnableBackground) CreateBackground();
+        CreateBackground();
+        CreateLabel();
 
         _terrain = GetTree().CurrentScene?.GetNodeOrNull<TerrainController>("TerrainController");
         if (!IsInstanceValid(_terrain))
         {
-            _debugLabel.Text = $"TerrainController node not found in current scene.";
-            _debugLabel.LabelSettings.FontColor = Colors.Red;
-            UpdateBackground();
+            ErrorMessage($"TerrainController node not found in current scene.");
             return;
         }
 
         if (!IsInstanceValid(_terrain.ActivePlayer))
         {
-            _debugLabel.Text = $"Player node and Camera node not found in current scene.";
-            _debugLabel.LabelSettings.FontColor = Colors.Red;
-            UpdateBackground();
+            ErrorMessage($"Player node and Camera node not found in current scene.");
             return;
         }
     }
@@ -69,8 +67,7 @@ public partial class DebugOverlay : CanvasLayer
     public override void _Process(double delta)
     {
         _elapsedTime += (float)delta;
-        if (_elapsedTime < UpdateInterval)
-            return;
+        if (_elapsedTime < UpdateInterval) return;
         _elapsedTime = 0;
 
         if (!IsInstanceValid(_terrain.ActivePlayer) || !IsInstanceValid(_terrain) || !IsInstanceValid(_debugLabel))
@@ -92,6 +89,6 @@ public partial class DebugOverlay : CanvasLayer
         Biome Type: {biome}
         """;
 
-        UpdateBackground();
+        _background.Size = BackgroundSize;
     }
 }

@@ -8,13 +8,13 @@ public partial class MinimapOverlay : CanvasLayer
     [Export] private int _minimapSize = 128;
     [Export(PropertyHint.Range, "0.0f, 1.0f, 0.01f, prefer_slider")]
     private float _minimapTransparency = 1.0f;
+    [Export] private Vector2 _margin = new(10, 10);
     [Export] private bool _startVisible = false;
 
     private TerrainController _terrain;
     private TextureRect _textureRect;
     private Image _image;
     private ImageTexture _texture;
-    private Vector2 _margin = new(10, 10);
 
     private static readonly Color[] BiomeColors =
     [
@@ -126,7 +126,10 @@ public partial class MinimapOverlay : CanvasLayer
         if (@event is InputEventKey key && key.Pressed && !key.Echo)
         {
             if (key.Keycode == Key.M)
+            {
                 Visible = !Visible;
+                UpdateMinimap();
+            }
         }
     }
 }

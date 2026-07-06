@@ -70,8 +70,6 @@ shader_parameter/rock_color = Color(0.7, 0.7, 0.8, 1)
 shader_parameter/snow_color = Color(0.95, 0.95, 1, 1)
 shader_parameter/desert_color = Color(0.85, 0.7, 0.4, 1)
 
-[sub_resource type="LabelSettings" id="LabelSettings_tipki"]
-
 [node name="Main" type="Node3D" unique_id=909135880]
 
 [node name="Sky" parent="." unique_id=184431804 instance=ExtResource("1_tipki")]
@@ -115,14 +113,6 @@ Sensitivity = 0.25
 
 [node name="DebugOverlay" type="CanvasLayer" parent="." unique_id=481454780]
 script = ExtResource("23_y6deb")
-
-[node name="DebugLabel" type="Label" parent="DebugOverlay" unique_id=270831581]
-offset_left = 10.0
-offset_top = 10.0
-offset_right = 210.0
-offset_bottom = 34.0
-size_flags_horizontal = 0
-label_settings = SubResource("LabelSettings_tipki")
 
 [node name="MinimapOverlay" type="CanvasLayer" parent="." unique_id=1672899677]
 script = ExtResource("24_y6deb")
