@@ -24,6 +24,7 @@
 [ext_resource type="Texture2D" uid="uid://snowtex01" path="res://assets/Blockbench/terrain/snow_terrain_texture.png" id="24_snowtx"]
 [ext_resource type="Script" uid="uid://deohhb7hg32ed" path="res://scripts/Overlay/MinimapOverlay.cs" id="24_y6deb"]
 [ext_resource type="Texture2D" uid="uid://desertex01" path="res://assets/Blockbench/terrain/desert_terrain_texture.png" id="25_desertx"]
+[ext_resource type="Resource" uid="uid://cjqm1ewoqo7jh" path="res://scripts/Grass/BladeGrassGenerator.tres" id="26_blade"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_eb6dy"]
 frequency = 0.0005
@@ -101,6 +102,7 @@ TreeGenerator = ExtResource("3_trceg")
 GrassGenerator = ExtResource("3_eb6dy")
 StoneGenerator = ExtResource("9_0ld40")
 PlantGenerator = ExtResource("16_0ld40")
+BladeGrassGen = ExtResource("26_blade")
 Player = NodePath("../Player")
 Camera = NodePath("../Camera")
 PlayerOffset = 1.0

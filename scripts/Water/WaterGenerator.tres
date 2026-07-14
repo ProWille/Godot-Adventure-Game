@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WaterGenerator" format=3 uid="uid://egkus3nsj3q5"]
+[gd_resource type="Resource" format=3 uid="uid://egkus3nsj3q5"]
 
 [ext_resource type="Script" uid="uid://c0ercyln00bgm" path="res://scripts/Water/WaterGenerator.cs" id="1"]
 [ext_resource type="PlaneMesh" uid="uid://dr2lt1nbl1pbe" path="res://materials/WaterMesh.tres" id="1_idgec"]

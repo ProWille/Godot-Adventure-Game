@@ -45,6 +45,7 @@ public partial class TerrainController : Node3D
     public int Resolution { get; set; } = 32;
     [Export(PropertyHint.Range, "4.0f, 256.0f, 4.0f, prefer_slider")]
     public float Height { get; set; } = 64.0f;
+
     [ExportGroup("Biome Thresholds")]
     [Export(PropertyHint.Range, "0.0, 1.0, 0.05, prefer_slider")]
     public float OceanHeightThreshold { get; set; } = 0.4f;
@@ -70,6 +71,10 @@ public partial class TerrainController : Node3D
     [Export] public bool StonesEnabled { get; set; } = true;
     [Export] public DecorationGenerator PlantGenerator { get; set; }
     [Export] public bool PlantsEnabled { get; set; } = true;
+
+    [ExportGroup("Blade Grass Settings")]
+    [Export] public BladeGrassGenerator BladeGrassGen { get; set; }
+    [Export] public bool BladeGrassEnabled { get; set; } = true;
 
     [ExportGroup("Player Settings")]
     [Export] public Node3D Player { get; set; }
@@ -154,6 +159,19 @@ public partial class TerrainController : Node3D
             WaterGenerator.GenerateForChunk(coord);
     }
 
+    private void InitializeBladeGrass()
+    {
+        if (!BladeGrassEnabled) return;
+        if (!IsInstanceValid(BladeGrassGen))
+        {
+            GD.PushWarning($"{nameof(BladeGrassGen)} is not assigned.");
+            return;
+        }
+        BladeGrassGen.Initialize(this);
+        foreach (var coord in _chunks.Keys)
+            BladeGrassGen.GenerateForChunk(coord);
+    }
+
     private void InitializeDecorationGenerators(params (DecorationGenerator generator, bool enabled)[] fields)
     {
         foreach (var (generator, enabled) in fields)
@@ -206,6 +224,7 @@ public partial class TerrainController : Node3D
         SetActivePlayer(IsPlayerActive);
 
         InitializeWaterGenerator();
+        InitializeBladeGrass();
         InitializeDecorationGenerators(GetDecorationGenerators());
 
         CurrentChunkCoord = GetChunkCoord(ActivePlayer.GlobalPosition);
@@ -245,6 +264,7 @@ public partial class TerrainController : Node3D
         var height = baseHeight + biomeHeight;
         height *= 1.0f - Mathf.Max(0.0f, ErosionNoise.GetNoise2D(worldX, worldZ)) * erosionWeight * 0.5f;
         height += DetailNoise.GetNoise2D(worldX, worldZ) * detailWeight * 0.1f;
+        height += ClutterNoise.GetNoise2D(worldX, worldZ) * detailWeight * 0.05f;
 
         return height;
     }
@@ -385,6 +405,12 @@ public partial class TerrainController : Node3D
         WaterGenerator.GenerateForChunk(coord);
     }
 
+    private void TryGenerateBladeGrass(Vector2I coord)
+    {
+        if (!BladeGrassEnabled || !IsInstanceValid(BladeGrassGen)) return;
+        BladeGrassGen.GenerateForChunk(coord);
+    }
+
     private static void TryGenerateDecorations(Vector2I coord, params (DecorationGenerator generator, bool enabled)[] fields)
     {
         foreach (var (generator, enabled) in fields)
@@ -404,6 +430,7 @@ public partial class TerrainController : Node3D
         }
 
         TryGenerateWater(coord);
+        TryGenerateBladeGrass(coord);
         TryGenerateDecorations(coord, GetDecorationGenerators());
     }
 
@@ -466,6 +493,12 @@ public partial class TerrainController : Node3D
         WaterGenerator.RemoveForChunk(coord);
     }
 
+    private void TryRemoveBladeGrass(Vector2I coord)
+    {
+        if (!BladeGrassEnabled || !IsInstanceValid(BladeGrassGen)) return;
+        BladeGrassGen.RemoveForChunk(coord);
+    }
+
     private static void TryRemoveDecorations(Vector2I coord, params (DecorationGenerator generator, bool enabled)[] fields)
     {
         foreach (var (generator, enabled) in fields)
@@ -484,6 +517,7 @@ public partial class TerrainController : Node3D
         }
 
         TryRemoveWater(coord);
+        TryRemoveBladeGrass(coord);
         TryRemoveDecorations(coord, GetDecorationGenerators());
     }
 
@@ -493,6 +527,14 @@ public partial class TerrainController : Node3D
         WaterGenerator.ClearAll();
         foreach (var coord in _chunks.Keys)
             WaterGenerator.GenerateForChunk(coord);
+    }
+
+    private void TryRegenerateBladeGrass()
+    {
+        if (!BladeGrassEnabled || !IsInstanceValid(BladeGrassGen)) return;
+        BladeGrassGen.ClearAll();
+        foreach (var coord in _chunks.Keys)
+            BladeGrassGen.GenerateForChunk(coord);
     }
 
     private void TryRegenerateDecorations(params (DecorationGenerator generator, bool enabled)[] fields)
@@ -544,6 +586,7 @@ public partial class TerrainController : Node3D
         }
 
         TryRegenerateWater();
+        TryRegenerateBladeGrass();
         TryRegenerateDecorations(GetDecorationGenerators());
     }
 }

@@ -5,7 +5,7 @@
 [ext_resource type="Curve" uid="uid://c248rq886nt5q" path="res://scripts/Biomes/Ocean/ErosionWeight.tres" id="2_lbks0"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_p74ul"]
-frequency = 0.002
+frequency = 0.0038
 fractal_octaves = 1
 
 [resource]

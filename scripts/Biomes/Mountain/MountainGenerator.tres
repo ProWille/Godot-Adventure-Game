@@ -5,6 +5,8 @@
 [ext_resource type="Curve" uid="uid://c0hmmduy5fatl" path="res://scripts/Biomes/Mountain/ErosionWeight.tres" id="2_r0a6a"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_6s2xe"]
+noise_type = 3
+frequency = 0.0031
 fractal_type = 2
 fractal_octaves = 4
 

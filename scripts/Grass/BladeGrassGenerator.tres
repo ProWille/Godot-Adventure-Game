@@ -1,0 +1,27 @@
+[gd_resource type="Resource" format=3 uid="uid://cjqm1ewoqo7jh"]
+
+[ext_resource type="Shader" uid="uid://blrbh8n4qb12b" path="res://shaders/grass.gdshader" id="1_grass"]
+[ext_resource type="Texture2D" uid="uid://sl2dklmde5n5" path="res://assets/Blockbench/terrain/grass_noise.png" id="2_6lag4"]
+[ext_resource type="Script" uid="uid://drpnuxuymra3v" path="res://scripts/Grass/BladeGrassGenerator.cs" id="2_script"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_blade"]
+size = Vector2(0.06, 0.8)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_grass"]
+render_priority = 0
+shader = ExtResource("1_grass")
+shader_parameter/grass_color = Color(0.2, 0.6, 0.15, 1)
+shader_parameter/tip_color = Color(0.4, 0.8, 0.2, 1)
+shader_parameter/grass_height = 1.0
+shader_parameter/height_variation = 0.3
+shader_parameter/blade_width = 0.05
+shader_parameter/noise_texture = ExtResource("2_6lag4")
+shader_parameter/noise_scale = 0.1
+shader_parameter/wind_strength = 0.2
+
+[resource]
+script = ExtResource("2_script")
+BladeMesh = SubResource("QuadMesh_blade")
+GrassMaterial = SubResource("ShaderMaterial_grass")
+MinScale = 0.7
+MaxScale = 1.3
