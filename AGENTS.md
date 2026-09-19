@@ -7,7 +7,7 @@ Godot 4.x C# adventure game with chunk-based procedural terrain generation using
 ## Project Structure
 
 ```
-/home/william/Development/Godot/Adventure-Game/
+./
 ├── scripts/                     # C# source files
 │   ├── TerrainController.cs     # Main terrain/chunk system
 │   ├── CameraController.cs      # Camera controls

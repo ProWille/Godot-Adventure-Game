@@ -27,6 +27,7 @@ mono_crash.*.json
 .opencode/
 .superpowers/
 *.old
+*.old.*
 
 # Third-party asset packs (not tracked)
 /assets/AnimalsFree/

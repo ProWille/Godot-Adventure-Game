@@ -19,10 +19,6 @@ run/main_scene="uid://cn8edqjhbxsuc"
 config/features=PackedStringArray("4.7", "C#", "Mobile")
 config/icon="res://icon.png"
 
-[autoload]
-
-MCPRuntimeBridge="*uid://wk2yhw3winuo"
-
 [display]
 
 window/size/viewport_width=1920
@@ -31,10 +27,6 @@ window/size/viewport_height=1080
 [dotnet]
 
 project/assembly_name="Adventure-Game"
-
-[editor_plugins]
-
-enabled=PackedStringArray("res://addons/godot_dotnet_mcp/plugin.cfg")
 
 [input]
 
