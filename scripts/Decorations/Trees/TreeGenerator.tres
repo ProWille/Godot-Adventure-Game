@@ -9,14 +9,14 @@ albedo_color = Color(0.45, 0.3, 0.18, 1)
 material = SubResource("StandardMaterial3D_bark")
 top_radius = 0.15
 bottom_radius = 0.35
-height = 1.5
+height = 10.0
 radial_segments = 6
 rings = 1
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_tree_b"]
 material = SubResource("StandardMaterial3D_bark")
 top_radius = 0.25
-height = 1.0
+height = 5.0
 radial_segments = 6
 rings = 1
 
@@ -31,4 +31,4 @@ DensityNoiseAmplitude = 10
 PlacementFrequency = 0.2
 MinScale = 1.0
 MaxScale = 5.0
-HeightOffset = -0.5
+HeightOffset = 2.0

@@ -7,15 +7,15 @@ albedo_color = Color(0.3, 0.65, 0.25, 1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_grass_a"]
 material = SubResource("StandardMaterial3D_grass")
-size = Vector3(0.15, 0.12, 0.15)
+size = Vector3(0.05, 0.2, 0.05)
 
 [sub_resource type="BoxMesh" id="BoxMesh_grass_b"]
 material = SubResource("StandardMaterial3D_grass")
-size = Vector3(0.12, 0.2, 0.12)
+size = Vector3(0.1, 0.4, 0.1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_grass_c"]
 material = SubResource("StandardMaterial3D_grass")
-size = Vector3(0.2, 0.08, 0.2)
+size = Vector3(0.025, 0.1, 0.025)
 
 [resource]
 script = ExtResource("1_u2avk")
