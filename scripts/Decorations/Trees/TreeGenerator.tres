@@ -1,12 +1,28 @@
 [gd_resource type="Resource" format=3 uid="uid://cya0kkp5j7ujm"]
 
 [ext_resource type="Script" uid="uid://rbnx8dfclf8s" path="res://scripts/Decorations/Trees/TreePlacer.cs" id="1_7tvel"]
-[ext_resource type="ArrayMesh" uid="uid://dhhiw85djoevm" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Trees/GenericTrees/extracted/GenericTreeE.GenericTreeE_002.mesh" id="1_8ktxp"]
-[ext_resource type="ArrayMesh" uid="uid://bq7ivngkw55mp" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Trees/Birch/extracted/BirchTreeAdultA.BirchTreeAdultA_001.mesh" id="2_gdobj"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bark"]
+albedo_color = Color(0.45, 0.3, 0.18, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_tree_a"]
+material = SubResource("StandardMaterial3D_bark")
+top_radius = 0.15
+bottom_radius = 0.35
+height = 1.5
+radial_segments = 6
+rings = 1
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_tree_b"]
+material = SubResource("StandardMaterial3D_bark")
+top_radius = 0.25
+height = 1.0
+radial_segments = 6
+rings = 1
 
 [resource]
 script = ExtResource("1_7tvel")
-DecorationMeshes = Array[Mesh]([ExtResource("1_8ktxp"), ExtResource("2_gdobj")])
+DecorationMeshes = Array[Mesh]([SubResource("CylinderMesh_tree_a"), SubResource("CylinderMesh_tree_b")])
 ForestDensity = 20
 GrasslandDensity = 5
 DensityThreshold = 0.6

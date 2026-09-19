@@ -1,11 +1,20 @@
 [gd_resource type="Resource" format=3 uid="uid://dr5xgsfmysydf"]
 
-[ext_resource type="ArrayMesh" uid="uid://cmqtqei5wjuuy" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Rocks/extracted/RockBigC.RockBigC_001.mesh" id="1_kjs6u"]
 [ext_resource type="Script" uid="uid://cs1qck3wj1bdn" path="res://scripts/Decorations/Stones/StonePlacer.cs" id="1_o7ru4"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_stone"]
+albedo_color = Color(0.55, 0.55, 0.6, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_stone"]
+material = SubResource("StandardMaterial3D_stone")
+radius = 0.4
+height = 0.8
+radial_segments = 6
+rings = 3
 
 [resource]
 script = ExtResource("1_o7ru4")
-DecorationMeshes = Array[Mesh]([ExtResource("1_kjs6u")])
+DecorationMeshes = Array[Mesh]([SubResource("SphereMesh_stone")])
 ForestDensity = 30
 GrasslandDensity = 30
 DensityThreshold = 0.3

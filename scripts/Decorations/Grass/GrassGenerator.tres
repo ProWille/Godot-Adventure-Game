@@ -1,13 +1,25 @@
 [gd_resource type="Resource" format=3 uid="uid://ceepvn633kke6"]
 
-[ext_resource type="ArrayMesh" uid="uid://3qoheu8rxmkc" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Grass/GrassLumps/extracted/GrassLumpLargeETall.GrassLumpLargeETall_001.mesh" id="1_q0v66"]
 [ext_resource type="Script" uid="uid://dsaobgewr0g4b" path="res://scripts/Decorations/Grass/GrassPlacer.cs" id="1_u2avk"]
-[ext_resource type="ArrayMesh" uid="uid://bv84lgt5uibvq" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Grass/GrassLumps/extracted/GrassLumpLargeHTall.GrassBladesH_007.mesh" id="2_shc4b"]
-[ext_resource type="ArrayMesh" uid="uid://c0o8oi7ecqswi" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Grass/GrassLumps/extracted/GrassLumpLargeB.GrassLumpLargeB_001.mesh" id="3_amk5w"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_grass"]
+albedo_color = Color(0.3, 0.65, 0.25, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_grass_a"]
+material = SubResource("StandardMaterial3D_grass")
+size = Vector3(0.15, 0.12, 0.15)
+
+[sub_resource type="BoxMesh" id="BoxMesh_grass_b"]
+material = SubResource("StandardMaterial3D_grass")
+size = Vector3(0.12, 0.2, 0.12)
+
+[sub_resource type="BoxMesh" id="BoxMesh_grass_c"]
+material = SubResource("StandardMaterial3D_grass")
+size = Vector3(0.2, 0.08, 0.2)
 
 [resource]
 script = ExtResource("1_u2avk")
-DecorationMeshes = Array[Mesh]([ExtResource("1_q0v66"), ExtResource("2_shc4b"), ExtResource("3_amk5w")])
+DecorationMeshes = Array[Mesh]([SubResource("BoxMesh_grass_a"), SubResource("BoxMesh_grass_b"), SubResource("BoxMesh_grass_c")])
 ForestDensity = 50
 GrasslandDensity = 200
 DensityThreshold = 0.5

@@ -1,12 +1,21 @@
 [gd_resource type="Resource" format=3 uid="uid://cqjoi7bwwsyv1"]
 
 [ext_resource type="Script" uid="uid://dwhxjh6qnjxts" path="res://scripts/Decorations/Plants/PlantPlacer.cs" id="1_5lncm"]
-[ext_resource type="ArrayMesh" uid="uid://cnyct83pxg86w" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Plants/Bluebells/extracted/BluebellsClusterB.BluebellsClusterB_001.mesh" id="1_pwa4m"]
-[ext_resource type="ArrayMesh" uid="uid://cqdaomkdvryro" path="res://assets/VertexRageStudio/LowPolyNature/Models/Env/Plants/Foxgloves/extracted/FoxgloveAVariantA.FoxgloveAVariantA_001.mesh" id="2_vq8n1"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_plant"]
+albedo_color = Color(0.35, 0.7, 0.3, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_plant_a"]
+material = SubResource("StandardMaterial3D_plant")
+size = Vector3(0.1, 0.18, 0.1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_plant_b"]
+material = SubResource("StandardMaterial3D_plant")
+size = Vector3(0.14, 0.12, 0.14)
 
 [resource]
 script = ExtResource("1_5lncm")
-DecorationMeshes = Array[Mesh]([ExtResource("1_pwa4m"), ExtResource("2_vq8n1")])
+DecorationMeshes = Array[Mesh]([SubResource("BoxMesh_plant_a"), SubResource("BoxMesh_plant_b")])
 ForestDensity = 40
 GrasslandDensity = 150
 PlacementFrequency = 0.1
