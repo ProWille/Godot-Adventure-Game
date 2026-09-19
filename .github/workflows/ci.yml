@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    name: Build & Import Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Setup Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: "4.7.2"
+          use-dotnet: true
+
+      - name: Restore & Build
+        run: dotnet build
+
+      # Catches broken/missing resource references (e.g. assets not committed).
+      - name: Import project (headless)
+        run: |
+          godot --headless --import 2>&1 | tee import.log
+          if grep -qiE 'Parse Error|referenced non-existent resource|Failed to instantiate an autoload|Resource file not found|Can.t load resource' import.log; then
+            echo "::error::Broken resource references detected during import"
+            exit 1
+          fi
+          echo "Import check passed"
+
+      # Boots the main scene headless. Fails only on real script/exception
+      # errors; the dummy headless renderer emits harmless RID/mesh warnings.
+      - name: Boot smoke test
+        run: |
+          godot --headless --quit-after 180 --log-file gd.log 2>&1 | tee boot.log || true
+          if grep -qE 'SCRIPT ERROR|Unhandled exception|Exception thrown|System\.[A-Za-z]+Exception' gd.log boot.log; then
+            echo "::error::Script errors detected during headless boot"
+            cat gd.log
+            exit 1
+          fi
+          echo "Boot check passed"
