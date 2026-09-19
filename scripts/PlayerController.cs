@@ -54,6 +54,14 @@ public partial class PlayerController : CharacterBody3D
 
             else if (key.Keycode == Key.Escape)
                 Input.MouseMode = Input.MouseModeEnum.Visible;
+
+            else if (key.Keycode == Key.F11)
+            {
+                var mode = DisplayServer.WindowGetMode();
+                DisplayServer.WindowSetMode(mode == DisplayServer.WindowMode.Fullscreen
+                    ? DisplayServer.WindowMode.Windowed
+                    : DisplayServer.WindowMode.Fullscreen);
+            }
         }
     }
 

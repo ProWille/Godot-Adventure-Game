@@ -52,6 +52,7 @@ cd Adventure-Game
 | `Tab` | Toggle player / free camera |
 | `R` | Reload current scene |
 | `Esc` | Release mouse cursor |
+| `F11` | Toggle fullscreen |
 | `X` | Quit |
 
 ## Project Structure

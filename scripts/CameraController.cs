@@ -48,6 +48,14 @@ public partial class CameraController : Camera3D
 
             else if (key.Keycode == Key.Escape)
                 Input.MouseMode = Input.MouseModeEnum.Visible;
+
+            else if (key.Keycode == Key.F11)
+            {
+                var mode = DisplayServer.WindowGetMode();
+                DisplayServer.WindowSetMode(mode == DisplayServer.WindowMode.Fullscreen
+                    ? DisplayServer.WindowMode.Windowed
+                    : DisplayServer.WindowMode.Fullscreen);
+            }
         }
     }
 
