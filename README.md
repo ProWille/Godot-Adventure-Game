@@ -4,7 +4,9 @@
 
 Built with C# and Godot's FastNoiseLite for seamless, fully deterministic procedural generation.
 
-![Screenshot](assets/screenshots/screenshot.png)
+![Free-camera view](assets/screenshots/screenshot-camera.png)
+
+![Player view](assets/screenshots/screenshot-player.png)
 
 ---
 
