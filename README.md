@@ -4,10 +4,7 @@
 
 Built with C# and Godot's FastNoiseLite for seamless, fully deterministic procedural generation.
 
-<!-- Add a screenshot at assets/screenshots/screenshot.png, then uncomment the line below. -->
-<!-- ![Screenshot](assets/screenshots/screenshot.png) -->
-
-> **Before publishing:** drop a screenshot (or short GIF) at `assets/screenshots/screenshot.png` and uncomment the image line above. Visuals matter a lot for a portfolio repo.
+![Screenshot](assets/screenshots/screenshot.png)
 
 ---
 
