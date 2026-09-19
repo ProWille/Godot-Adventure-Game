@@ -42,6 +42,14 @@ cd Adventure-Game
    ```
 3. Press **Play** (or run `godot --path .`)
 
+### Optional: standalone binary (Linux)
+
+Uses the mono/.NET edition of Godot (`godot-mono`, or set `GODOT_BIN` to override) plus the export templates to produce and launch a standalone Linux build:
+
+```bash
+./build-and-run.sh
+```
+
 ## Controls
 
 | Input | Action |
