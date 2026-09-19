@@ -48,9 +48,11 @@ cd Adventure-Game
 | Input | Action |
 |-------|--------|
 | `WASD` | Move |
+| `E` / `Q` | Fly up / down (free camera) |
 | Mouse | Look around |
+| Mouse wheel | Adjust free-camera speed |
 | `Space` | Jump |
-| `F` | Toggle player / free camera |
+| `Tab` | Toggle player / free camera |
 | `R` | Reload current scene |
 | `Esc` | Release mouse cursor |
 | `X` | Quit |
@@ -64,7 +66,8 @@ cd Adventure-Game
 │   ├── Biomes/                # Per-biome generator resources (height/detail/erosion)
 │   ├── Decorations/           # Decoration framework + placeholder meshes (trees/stones/plants/grass)
 │   ├── Grass/                 # Shader-based blade grass generator
-│   └── Overlay/               # Debug HUD + minimap
+│   ├── Overlay/               # Debug HUD + minimap
+│   └── Water/                 # Water plane generator
 ├── scenes/             # Godot scenes (main, player, camera, sky)
 ├── shaders/            # GLSL shaders (terrain, grass, water)
 └── assets/Blockbench/  # Original pixel-art terrain textures + Blockbench sources
@@ -75,7 +78,7 @@ cd Adventure-Game
 - **Engine:** Godot 4.7 (mono)
 - **Language:** C# / .NET 8
 - **Generation:** FastNoiseLite (height, moisture, temperature, detail noise)
-- **Rendering:** Custom GLSL shaders, MultiMesh instancing, vertex-color biome blending
+- **Rendering:** Custom GLSL shaders, MultiMesh instancing, vertex-color biome selection
 
 ## License
 
